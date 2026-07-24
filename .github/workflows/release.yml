@@ -1,0 +1,40 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Validate included examples
+        run: |
+          python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
+            skills/generate-twinkling-pack/examples/example-pack.wink
+          python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
+            skills/generate-twinkling-pack/examples/example-mixed-pack.wink
+          python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \
+            skills/generate-twinkling-word-pack/examples/example-word-pack.wink
+      - name: Package Skills
+        run: |
+          python3 scripts/package_skills.py
+          cd dist
+          sha256sum *.zip > SHA256SUMS.txt
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            dist/generate-twinkling-pack.zip \
+            dist/generate-twinkling-word-pack.zip \
+            dist/SHA256SUMS.txt \
+            --generate-notes \
+            --title "Wink Flashcard Tools ${GITHUB_REF_NAME}"

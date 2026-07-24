@@ -1,0 +1,4 @@
+interface:
+  display_name: "Generate Twinkling Word Pack"
+  short_description: "Build AI-authored WordDocument .wink vocabulary packs"
+  default_prompt: "Use $generate-twinkling-word-pack to create an importable .wink vocabulary pack from this word list or source material."

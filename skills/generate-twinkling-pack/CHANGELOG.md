@@ -1,0 +1,33 @@
+# Changelog
+
+All notable changes to Generate Twinkling Pack are documented here.
+
+## 1.1.0 — 2026-07-24
+
+- Adds text-only `ChoiceDocument` cards.
+- Supports both single-answer and multiple-answer choices.
+- Allows choice cards and `NoteLegacyDocument` cards to coexist in one pack and share hierarchical tags.
+- Adds strict validation for choice blocks, option IDs, correct-answer sets, summaries, spans, and occlusion flags.
+- Adds mixed-pack examples and choice-card authoring guidance.
+
+### Current limitations
+
+- Images and native RichImage occlusions are supported on note cards, not inside choice cards.
+- Word cards, audio, video, and freehand rich-image drawings are not supported.
+- Image occlusion supports rectangles only.
+
+## 1.0.0 — 2026-07-24
+
+- First public release.
+- Generates front/back `NoteLegacyDocument` flashcards.
+- Supports hierarchical tags and rich-text spans.
+- Supports ordinary image attachments.
+- Supports native rectangular `.rimg` image occlusions.
+- Validates Wink structure, versions, attachments, tag paths, and duplicate cards.
+- Includes a Chinese user guide, format specification, input schema, authoring guide, and example pack.
+
+### Limitations in 1.0.0
+
+- Choice cards and word cards are not supported.
+- Audio, video, and freehand rich-image drawings are not supported.
+- Image occlusion supports rectangles only.

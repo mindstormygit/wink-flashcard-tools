@@ -1,0 +1,56 @@
+{
+  "name": "英语学习示例",
+  "langCode": "en",
+  "tags": [
+    {
+      "id": "core",
+      "name": "核心词汇",
+      "color": "#29B6F6"
+    }
+  ],
+  "words": [
+    {
+      "word": "resilient",
+      "phonetic": "/rɪˈzɪliənt/",
+      "definition": "adj. 能迅速恢复的；有适应力的",
+      "examples": [
+        {
+          "sentence": "The system remained resilient after the unexpected failure.",
+          "translation": "系统在意外故障后仍表现出很强的恢复能力。"
+        }
+      ],
+      "extras": [
+        {
+          "label": "音节",
+          "content": "re·sil·ient",
+          "templateKey": "en.syllable"
+        }
+      ],
+      "tag": "core"
+    },
+    {
+      "word": "mitigate",
+      "phonetic": "/ˈmɪtɪɡeɪt/",
+      "definition": "v. 缓解；减轻",
+      "examples": [
+        {
+          "sentence": "Regular backups can mitigate the risk of data loss.",
+          "translation": "定期备份可以降低数据丢失的风险。"
+        }
+      ],
+      "tag": "core"
+    },
+    {
+      "word": "synthesize",
+      "phonetic": "/ˈsɪnθəsaɪz/",
+      "definition": "v. 综合；合成",
+      "examples": [
+        {
+          "sentence": "Students must synthesize evidence from several sources.",
+          "translation": "学生必须综合多个来源的证据。"
+        }
+      ],
+      "tag": "core"
+    }
+  ]
+}

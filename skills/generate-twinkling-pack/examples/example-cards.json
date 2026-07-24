@@ -1,0 +1,117 @@
+{
+  "name": "闪卡 Skill 示例卡包",
+  "tags": [
+    {
+      "id": "method",
+      "name": "学习方法",
+      "color": "#13C25C"
+    },
+    {
+      "id": "review",
+      "name": "复习",
+      "parent": "method",
+      "color": "#087E3B"
+    },
+    {
+      "id": "authoring",
+      "name": "制卡",
+      "parent": "method",
+      "color": "#FFC400"
+    }
+  ],
+  "cards": [
+    {
+      "front": "为什么一张卡片应该只考查一个知识点？",
+      "back": [
+        {
+          "text": "单一考点",
+          "bold": true,
+          "highlight": true
+        },
+        {
+          "text": "能让回忆结果更明确，也更容易判断自己究竟掌握了什么。"
+        }
+      ],
+      "tag": "authoring"
+    },
+    {
+      "type": "choice",
+      "question": "制作抽认卡时，为什么要先尝试回忆再看答案？",
+      "options": [
+        {
+          "content": "主动回忆能检验掌握程度并强化记忆线索。",
+          "correct": true
+        },
+        {
+          "content": "这样可以避免任何形式的遗忘。",
+          "correct": false
+        },
+        {
+          "content": "这样就不再需要间隔复习。",
+          "correct": false
+        }
+      ],
+      "note": [
+        {
+          "text": "解析：",
+          "bold": true
+        },
+        {
+          "text": "先回忆再核对答案能形成检索练习，但仍需间隔复习。"
+        }
+      ],
+      "tag": "review"
+    },
+    {
+      "front": [
+        {
+          "text": "间隔复习",
+          "bold": true,
+          "textColor": "#087E3B"
+        },
+        {
+          "text": "解决的核心问题是什么？"
+        }
+      ],
+      "back": "让知识在逐渐遗忘时再次出现，把有限时间优先用在需要巩固的内容上。",
+      "tag": "review"
+    },
+    {
+      "front": "Agent 生成卡包后，为什么仍然需要人工预览？",
+      "back": [
+        {
+          "text": "AI 生成内容可能存在遗漏或错误。",
+          "bold": true
+        },
+        {
+          "text": "重要知识应当与原始资料核对，确认后再进入长期复习。"
+        }
+      ],
+      "tag": "authoring"
+    },
+    {
+      "type": "choice",
+      "question": "Generate Twinkling Pack 当前支持哪些卡片类型？",
+      "options": [
+        {
+          "content": "正反面笔记卡",
+          "correct": true
+        },
+        {
+          "content": "单选题",
+          "correct": true
+        },
+        {
+          "content": "多选题",
+          "correct": true
+        },
+        {
+          "content": "单词卡",
+          "correct": false
+        }
+      ],
+      "note": "笔记卡、单选题和多选题可以混合放在同一个 .wink 卡包中；单词卡暂不支持。",
+      "tag": "authoring"
+    }
+  ]
+}

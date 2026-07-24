@@ -1,0 +1,52 @@
+# Generate Twinkling Word Pack 使用帮助
+
+这个 Skill 使用当前 Codex、Claude 或其他用户选择的 AI Agent 编写词条，然后生成可直接导入 Wink 的原生 `WordDocument` 单词卡包。它不调用闪卡私有服务、外部词典 API 或另一套 AI 服务。
+
+## 支持范围
+
+- 英语、日语、韩语、德语、法语、西班牙语、葡萄牙语和意大利语；
+- 单词、固定搭配和短语；
+- 音标或读音、中文释义、例句与例句翻译；
+- 音节、假名、罗马音、音调、冠词和复数形式等语言字段；
+- 可选层级 Tag；
+- 从词表、PDF、网页、课文或主题中选词。
+
+每个卡包只使用一种语言。不同语言应生成不同卡包。
+
+## 最短用法
+
+```text
+使用 $generate-twinkling-word-pack，把下面 30 个英语单词生成一个 .wink 单词卡包。
+释义使用简洁中文并保留词性，每个词添加一个自然例句和翻译；
+音标没有把握时不要猜。
+```
+
+从资料选词：
+
+```text
+使用 $generate-twinkling-word-pack 分析这个 PDF 的第 3 章，
+挑选约 40 个值得学习的英语单词或固定搭配。
+根据原文语境选择释义，按小节建立 Tag，生成可导入 Wink 的 .wink 单词卡包。
+```
+
+日语示例：
+
+```text
+使用 $generate-twinkling-word-pack，把这份日语词表制作成 .wink 单词卡包。
+补充假名、罗马音和有把握的音调，每个词给出中文释义和一个例句。
+不确定的音调留空并在交付时告诉我。
+```
+
+## 质量说明
+
+词条内容由当前 AIAgent 编写，不代表任何词典原文。音标、音调、罕见词义等存在不确定性时，Skill 要求省略可选字段；核心含义无法可靠判断时应跳过该词并报告，而不是生成看似精确的错误。
+
+## 安装与分享
+
+分享完整的 `generate-twinkling-word-pack` 目录，并放入：
+
+```text
+~/.codex/skills/generate-twinkling-word-pack/
+```
+
+确保 `SKILL.md` 位于目录第一层，且 `scripts`、`references` 和 `agents` 没有丢失。安装后新建一个 Codex 任务，让 Skill 被重新发现。

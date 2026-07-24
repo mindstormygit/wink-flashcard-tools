@@ -1,0 +1,34 @@
+name: Validate
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Validate note and mixed packs
+        run: |
+          python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
+            skills/generate-twinkling-pack/examples/example-pack.wink
+          python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
+            skills/generate-twinkling-pack/examples/example-mixed-pack.wink
+      - name: Validate word pack
+        run: |
+          python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \
+            skills/generate-twinkling-word-pack/examples/example-word-pack.wink
+      - name: Build release archives
+        run: python3 scripts/package_skills.py
+      - name: Test archives
+        run: |
+          unzip -t dist/generate-twinkling-pack.zip
+          unzip -t dist/generate-twinkling-word-pack.zip
