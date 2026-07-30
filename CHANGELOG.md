@@ -2,7 +2,7 @@
 
 This file records repository-wide releases. Component-specific changes are documented inside each Skill directory.
 
-## Unreleased
+## 1.2.0 — 2026-07-30
 
 - Adds standalone note, choice, and word cards as an alternative to pack output.
 - Extends both builders and validators to support either a root `CardVO` or `CardPackVO`.
