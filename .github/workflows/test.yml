@@ -22,10 +22,34 @@ jobs:
             skills/generate-twinkling-pack/examples/example-pack.wink
           python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
             skills/generate-twinkling-pack/examples/example-mixed-pack.wink
+          python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
+            skills/generate-twinkling-pack/examples/example-card.wink
       - name: Validate word pack
         run: |
           python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \
             skills/generate-twinkling-word-pack/examples/example-word-pack.wink
+          python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \
+            skills/generate-twinkling-word-pack/examples/example-word-card.wink
+      - name: Build both product types
+        run: |
+          python3 skills/generate-twinkling-pack/scripts/build_wink.py \
+            skills/generate-twinkling-pack/examples/example-cards.json \
+            /tmp/example-pack.wink
+          python3 skills/generate-twinkling-pack/scripts/build_wink.py \
+            skills/generate-twinkling-pack/examples/example-card.json \
+            /tmp/example-card.wink
+          python3 skills/generate-twinkling-pack/scripts/build_wink.py \
+            skills/generate-twinkling-pack/examples/example-one-card-pack.json \
+            /tmp/example-one-card-pack.wink --product pack
+          python3 skills/generate-twinkling-word-pack/scripts/build_word_wink.py \
+            skills/generate-twinkling-word-pack/examples/example-words.json \
+            /tmp/example-word-pack.wink
+          python3 skills/generate-twinkling-word-pack/scripts/build_word_wink.py \
+            skills/generate-twinkling-word-pack/examples/example-word-card.json \
+            /tmp/example-word-card.wink
+          python3 skills/generate-twinkling-word-pack/scripts/build_word_wink.py \
+            skills/generate-twinkling-word-pack/examples/example-one-word-pack.json \
+            /tmp/example-one-word-pack.wink --product pack
       - name: Build release archives
         run: python3 scripts/package_skills.py
       - name: Test archives

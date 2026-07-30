@@ -19,8 +19,14 @@ python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
 python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
   skills/generate-twinkling-pack/examples/example-mixed-pack.wink
 
+python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
+  skills/generate-twinkling-pack/examples/example-card.wink
+
 python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \
   skills/generate-twinkling-word-pack/examples/example-word-pack.wink
+
+python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \
+  skills/generate-twinkling-word-pack/examples/example-word-card.wink
 
 python3 scripts/package_skills.py
 ```

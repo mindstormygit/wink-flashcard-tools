@@ -8,6 +8,10 @@ Use this reference only when maintaining or debugging the serializer.
 - `content.json` is the first and only archive entry.
 - UTF-8 JSON without a byte-order mark.
 
+## Root Product
+
+`content.json` contains either one word-pack `CardPackVO` or one standalone word-card `CardVO`. The standalone card is not wrapped in a one-card pack. During import, Wink asks the user to choose its destination pack.
+
 ## Pack
 
 The pack uses `CardPackVO.version = 6`. Its Base64 `userInfo` decodes to:
@@ -39,6 +43,8 @@ Each `CardVO` has:
 ```
 
 `sidea` equals `WordDocument.word`; `sideb` equals `WordDocument.definition`.
+
+For a standalone-card product, this `CardVO` is the root value of `content.json`. It does not carry pack metadata or a tag; the embedded `WordDocument.langCode` keeps the card's language.
 
 ## WordDocument
 

@@ -1,0 +1,17 @@
+{
+  "name": "明确指定的单词卡包",
+  "langCode": "en",
+  "words": [
+    {
+      "word": "explicit",
+      "phonetic": "/ɪkˈsplɪsɪt/",
+      "definition": "adj. 明确的；清楚表达的",
+      "examples": [
+        {
+          "sentence": "The request was explicit.",
+          "translation": "这个要求表达得很明确。"
+        }
+      ]
+    }
+  ]
+}

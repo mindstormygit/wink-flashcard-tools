@@ -39,10 +39,28 @@ Write one UTF-8 JSON object:
 
 ## Root
 
-- `name`: Required non-empty pack name.
+- `name`: Required non-empty pack name in the pack product.
 - `langCode`: Required; one of `en`, `ja`, `ko`, `de`, `fr`, `es`, `pt`, or `it`.
 - `words`: Required non-empty array; at most 5,000 entries.
-- `tags`: Optional non-empty array.
+- `tags`: Optional non-empty array in the pack product.
+
+The default product selection is automatic: one final word becomes a standalone card, while two or more become a pack. Pass `--product pack` to force a pack, including a one-word pack. Pass `--product card` to explicitly require one standalone card.
+
+For a standalone word card, provide exactly one item in `words`. Do not include `name`, `tags`, or the word-level `tag`:
+
+```json
+{
+  "langCode": "en",
+  "words": [
+    {
+      "word": "resilient",
+      "definition": "adj. 能迅速恢复的；有适应力的"
+    }
+  ]
+}
+```
+
+The standalone `.wink` imports into a pack chosen by the user. Multiple words automatically use the pack product.
 
 ## Word
 

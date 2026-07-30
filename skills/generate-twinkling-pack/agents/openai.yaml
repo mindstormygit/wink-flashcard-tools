@@ -1,4 +1,4 @@
 interface:
-  display_name: "Generate Twinkling Pack"
-  short_description: "Build mixed note and choice .wink study packs"
-  default_prompt: "Use $generate-twinkling-pack to turn this PDF or source material into an importable .wink flashcard pack that mixes recall-oriented note cards with useful single- or multiple-answer choice cards, shared tags, rich text, inline images, and native image occlusions where appropriate."
+  display_name: "Generate Twinkling Cards"
+  short_description: "Build note or choice .wink cards and packs"
+  default_prompt: "Use $generate-twinkling-pack to turn this PDF or source material into importable .wink flashcards. Honor an explicitly requested standalone card or pack; otherwise export one final card as a standalone card and two or more as a pack. Use recall-oriented note cards or useful single- or multiple-answer choice cards, plus pack-level tags, rich text, inline images, and native image occlusions where appropriate."

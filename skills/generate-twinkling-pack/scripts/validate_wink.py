@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate mixed NoteLegacy/Choice .wink packs produced by this skill."""
+"""Validate mixed NoteLegacy/Choice .wink packs or cards from this skill."""
 
 import argparse
 import base64
@@ -578,7 +578,7 @@ def _validate_tags(value):
     return definitions
 
 
-def _validate_content(content):
+def _validate_pack_content(content):
     _require(isinstance(content, dict), "content.json root must be an object")
     _require(
         PACK_REQUIRED_KEYS.issubset(content)
@@ -709,6 +709,29 @@ def _validate_content(content):
     return summary, media_filenames
 
 
+def _validate_content(content):
+    _require(isinstance(content, dict), "content.json root must be an object")
+    if CARD_REQUIRED_KEYS.issubset(content):
+        _require(
+            set(content) == CARD_REQUIRED_KEYS,
+            "standalone card has missing or unexpected fields",
+        )
+        summary, media_filenames = _validate_pack_content(
+            {
+                "name": "Standalone card",
+                "cards": [content],
+                "version": APP_DOCUMENT_VERSION,
+            }
+        )
+        summary["name"] = None
+        summary["product"] = "card"
+        return summary, media_filenames
+
+    summary, media_filenames = _validate_pack_content(content)
+    summary["product"] = "pack"
+    return summary, media_filenames
+
+
 def validate_wink(path):
     _require(path.suffix.lower() == ".wink", "filename must end in .wink")
     _require(path.is_file(), f"file not found: {path}")
@@ -784,7 +807,10 @@ def validate_wink(path):
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(
-        description="Validate a mixed NoteLegacy/Choice TwinklingCard .wink pack."
+        description=(
+            "Validate a mixed NoteLegacy/Choice TwinklingCard .wink pack "
+            "or standalone card."
+        )
     )
     parser.add_argument("wink", type=Path, help=".wink file to validate")
     return parser.parse_args(argv)
@@ -803,20 +829,31 @@ def main(argv=None):
     ) as error:
         print(f"INVALID: {error}", file=sys.stderr)
         return 1
-    print(
-        f"VALID: pack {summary['name']!r}, {summary['card_count']} cards "
-        f"({summary['note_card_count']} note, "
-        f"{summary['choice_card_count']} choice), "
-        f"{summary['span_count']} spans, "
-        f"{summary['choice_option_count']} choice options "
-        f"({summary['single_choice_count']} single, "
-        f"{summary['multiple_choice_count']} multiple), "
-        f"{summary['attachment_count']} image attachments "
-        f"({summary['rich_image_count']} native RichImages, "
-        f"{summary['image_occlusion_count']} occlusions), "
-        f"{summary['tag_count']} tags, "
-        f"{summary['tagged_card_count']} tagged cards"
-    )
+    if summary["product"] == "card":
+        print(
+            "VALID: standalone "
+            f"{'choice' if summary['choice_card_count'] else 'note'} card, "
+            f"{summary['span_count']} spans, "
+            f"{summary['choice_option_count']} choice options, "
+            f"{summary['attachment_count']} image attachments "
+            f"({summary['rich_image_count']} native RichImages, "
+            f"{summary['image_occlusion_count']} occlusions)"
+        )
+    else:
+        print(
+            f"VALID: pack {summary['name']!r}, {summary['card_count']} cards "
+            f"({summary['note_card_count']} note, "
+            f"{summary['choice_card_count']} choice), "
+            f"{summary['span_count']} spans, "
+            f"{summary['choice_option_count']} choice options "
+            f"({summary['single_choice_count']} single, "
+            f"{summary['multiple_choice_count']} multiple), "
+            f"{summary['attachment_count']} image attachments "
+            f"({summary['rich_image_count']} native RichImages, "
+            f"{summary['image_occlusion_count']} occlusions), "
+            f"{summary['tag_count']} tags, "
+            f"{summary['tagged_card_count']} tagged cards"
+        )
     return 0
 
 

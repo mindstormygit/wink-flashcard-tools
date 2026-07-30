@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a mixed NoteLegacy/Choice TwinklingCard pack as an unencrypted .wink."""
+"""Build a mixed NoteLegacy/Choice TwinklingCard pack or card as a .wink."""
 
 import argparse
 import base64
@@ -26,6 +26,7 @@ CHOICE_DOCUMENT_VERSION = 100
 NOTE_DOCUMENT_TYPE = 0
 CHOICE_DOCUMENT_TYPE = 2
 ROOT_KEYS = {"name", "cards", "tags"}
+PRODUCT_CHOICES = ("auto", "pack", "card")
 NOTE_CARD_KEYS = {"type", "front", "back", "tag"}
 CHOICE_CARD_KEYS = {"type", "question", "options", "note", "tag"}
 CHOICE_OPTION_KEYS = {"content", "correct"}
@@ -597,7 +598,7 @@ def _normalize_choice_card(card, label, tags_by_id):
     }
 
 
-def load_source(path):
+def load_source(path, product="auto"):
     try:
         source = json.loads(path.read_text(encoding="utf-8"))
     except OSError as error:
@@ -607,21 +608,42 @@ def load_source(path):
 
     if not isinstance(source, dict):
         raise InputError("input root must be an object")
+    if product not in PRODUCT_CHOICES:
+        raise InputError(
+            "product must be one of " + ", ".join(PRODUCT_CHOICES)
+        )
     unknown_root_keys = set(source) - ROOT_KEYS
     if unknown_root_keys:
         raise InputError(
             "unsupported root fields: " + ", ".join(sorted(unknown_root_keys))
         )
 
-    name = _nonempty_text(source.get("name"), "name")
-    if "tags" in source:
-        normalized_tags, tags_by_id = _normalize_tags(source["tags"])
-    else:
-        normalized_tags, tags_by_id = [], {}
     cards = source.get("cards")
     if not isinstance(cards, list) or not cards:
         raise InputError("cards must be a non-empty array")
+    resolved_product = (
+        "card" if product == "auto" and len(cards) == 1 else product
+    )
+    if resolved_product == "auto":
+        resolved_product = "pack"
+    if resolved_product == "card" and len(cards) != 1:
+        raise InputError("standalone card output requires exactly one card")
 
+    if resolved_product == "card":
+        unsupported = {"name", "tags"} & set(source)
+        if unsupported:
+            raise InputError(
+                "standalone card input does not support root fields: "
+                + ", ".join(sorted(unsupported))
+            )
+        name = None
+        normalized_tags, tags_by_id = [], {}
+    else:
+        name = _nonempty_text(source.get("name"), "name")
+        if "tags" in source:
+            normalized_tags, tags_by_id = _normalize_tags(source["tags"])
+        else:
+            normalized_tags, tags_by_id = [], {}
     input_directory = path.parent.resolve()
     normalized_cards = []
     seen_pairs = set()
@@ -629,6 +651,8 @@ def load_source(path):
         label = f"cards[{index}]"
         if not isinstance(card, dict):
             raise InputError(f"{label} must be an object")
+        if resolved_product == "card" and "tag" in card:
+            raise InputError("standalone cards do not carry pack tags")
         card_type = card.get("type", "note")
         if card_type == "note":
             normalized = _normalize_note_card(
@@ -649,6 +673,7 @@ def load_source(path):
         "name": name,
         "cards": normalized_cards,
         "tags": [tag["vo"] for tag in normalized_tags],
+        "product": resolved_product,
     }
 
 
@@ -778,7 +803,23 @@ def build_pack(source):
     return pack, images
 
 
-def write_wink(pack, images, output_path):
+def build_card(source):
+    card = source["cards"][0]
+    if card["type"] == "choice":
+        return _choice_card_vo(card), []
+    return (
+        _note_card_vo(card),
+        card["front"]["images"] + card["back"]["images"],
+    )
+
+
+def build_artifact(source, product):
+    if product == "card":
+        return build_card(source)
+    return build_pack(source)
+
+
+def write_wink(content_root, images, output_path):
     if output_path.suffix.lower() != ".wink":
         raise InputError("output filename must end in .wink")
     if output_path.exists():
@@ -786,7 +827,7 @@ def write_wink(pack, images, output_path):
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     content = json.dumps(
-        pack,
+        content_root,
         ensure_ascii=False,
         separators=(",", ":"),
         sort_keys=True,
@@ -817,11 +858,18 @@ def write_wink(pack, images, output_path):
 def parse_args(argv):
     parser = argparse.ArgumentParser(
         description=(
-            "Build an unencrypted mixed NoteLegacy/Choice TwinklingCard .wink pack."
+            "Build an unencrypted mixed NoteLegacy/Choice TwinklingCard "
+            ".wink pack or standalone card."
         )
     )
     parser.add_argument("input", type=Path, help="UTF-8 cards JSON")
     parser.add_argument("output", type=Path, help="new .wink output path")
+    parser.add_argument(
+        "--product",
+        choices=PRODUCT_CHOICES,
+        default="auto",
+        help="artifact root type (default: auto by final card count)",
+    )
     return parser.parse_args(argv)
 
 
@@ -829,9 +877,9 @@ def main(argv=None):
     args = parse_args(argv)
     output_created = False
     try:
-        source = load_source(args.input)
-        pack, images = build_pack(source)
-        write_wink(pack, images, args.output)
+        source = load_source(args.input, args.product)
+        content_root, images = build_artifact(source, source["product"])
+        write_wink(content_root, images, args.output)
         output_created = True
         summary = validate_wink(args.output)
     except (
@@ -852,19 +900,30 @@ def main(argv=None):
         print(f"ERROR: {error}", file=sys.stderr)
         return 1
 
-    print(
-        f"Created {args.output} — pack {summary['name']!r}, "
-        f"{summary['card_count']} cards "
-        f"({summary['note_card_count']} note, "
-        f"{summary['choice_card_count']} choice), "
-        f"{summary['span_count']} spans, "
-        f"{summary['choice_option_count']} choice options, "
-        f"{summary['attachment_count']} image attachments "
-        f"({summary['rich_image_count']} native RichImages, "
-        f"{summary['image_occlusion_count']} occlusions), "
-        f"{summary['tag_count']} tags, "
-        f"{summary['tagged_card_count']} tagged cards"
-    )
+    if summary["product"] == "card":
+        print(
+            f"Created {args.output} — standalone "
+            f"{'choice' if summary['choice_card_count'] else 'note'} card, "
+            f"{summary['span_count']} spans, "
+            f"{summary['choice_option_count']} choice options, "
+            f"{summary['attachment_count']} image attachments "
+            f"({summary['rich_image_count']} native RichImages, "
+            f"{summary['image_occlusion_count']} occlusions)"
+        )
+    else:
+        print(
+            f"Created {args.output} — pack {summary['name']!r}, "
+            f"{summary['card_count']} cards "
+            f"({summary['note_card_count']} note, "
+            f"{summary['choice_card_count']} choice), "
+            f"{summary['span_count']} spans, "
+            f"{summary['choice_option_count']} choice options, "
+            f"{summary['attachment_count']} image attachments "
+            f"({summary['rich_image_count']} native RichImages, "
+            f"{summary['image_occlusion_count']} occlusions), "
+            f"{summary['tag_count']} tags, "
+            f"{summary['tagged_card_count']} tagged cards"
+        )
     return 0
 
 

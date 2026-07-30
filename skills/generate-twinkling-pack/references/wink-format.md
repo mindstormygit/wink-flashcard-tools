@@ -11,6 +11,10 @@ Use this reference when maintaining the scripts or diagnosing import compatibili
 - Encoding: UTF-8 JSON without a byte-order mark
 - Media filenames: `<32-lowercase-hex-attachment-id>.<extension>`
 
+## Root Product
+
+`content.json` contains either one `CardPackVO` for a pack or one `CardVO` for a standalone card. A standalone card is not wrapped in a one-card pack. During import, Wink asks the user to choose its destination pack and assigns the import tag, so the standalone root omits `tag`.
+
 ## Pack
 
 `content.json` is the minimal subset accepted by `CardPackVO`:
@@ -73,6 +77,8 @@ Each `CardVO` contains:
 ```
 
 Swift’s default `Data` JSON representation is standard Base64, so `rtf` must be a Base64 string rather than an embedded object.
+
+For a standalone-card product, this `CardVO` is the root value of `content.json` and omits `tag`. For a pack product, it appears inside `CardPackVO.cards`.
 
 `rtf` may contain either Base64-encoded `NoteLegacyDocument` JSON or Base64-encoded `ChoiceDocument` JSON.
 

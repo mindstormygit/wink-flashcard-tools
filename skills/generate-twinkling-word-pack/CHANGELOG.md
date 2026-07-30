@@ -2,6 +2,12 @@
 
 All notable changes to Generate Twinkling Word Pack are documented here.
 
+## Unreleased
+
+- Adds standalone native `WordDocument` `.wink` cards as an alternative to pack output.
+- Adds `--product card`, strict one-word input rules, standalone-card validation, documentation, and an example.
+- Adds automatic product selection by final word count while allowing explicit `--product pack` and `--product card` overrides.
+
 ## 1.0.0 — 2026-07-24
 
 - Generates native `WordDocument` vocabulary packs.

@@ -2,6 +2,12 @@
 
 All notable changes to Generate Twinkling Pack are documented here.
 
+## Unreleased
+
+- Adds standalone note or choice `.wink` cards as an alternative to pack output.
+- Adds `--product card`, strict one-card input rules, standalone-card validation, documentation, and an example.
+- Adds automatic product selection by final card count while allowing explicit `--product pack` and `--product card` overrides.
+
 ## 1.1.0 — 2026-07-24
 
 - Adds text-only `ChoiceDocument` cards.

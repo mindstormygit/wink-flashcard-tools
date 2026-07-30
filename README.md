@@ -2,16 +2,16 @@
 
 [简体中文](README.zh-CN.md)
 
-Open Skills, format references, builders, validators, and examples for generating importable `.wink` flashcard packs for the Wink app.
+Open Skills, format references, builders, validators, and examples for generating importable `.wink` standalone flashcards or flashcard packs for the Wink app.
 
 This repository contains the complete source of two independent AI-agent Skills:
 
 | Skill | Generates | Highlights |
 | --- | --- | --- |
-| [`generate-twinkling-pack`](skills/generate-twinkling-pack/) | Front/back note cards, single-answer choices, and multiple-answer choices | Mixed packs, rich text, hierarchical tags, inline images, and native rectangular image occlusion on note cards |
-| [`generate-twinkling-word-pack`](skills/generate-twinkling-word-pack/) | Native vocabulary cards | English, Japanese, Korean, German, French, Spanish, Portuguese, and Italian; pronunciation, Chinese definitions, examples, language-specific fields, and tags |
+| [`generate-twinkling-pack`](skills/generate-twinkling-pack/) | Standalone front/back note or choice cards, or mixed packs | Rich text, hierarchical tags, inline images, and native rectangular image occlusion on note cards |
+| [`generate-twinkling-word-pack`](skills/generate-twinkling-word-pack/) | Standalone native vocabulary cards or vocabulary packs | English, Japanese, Korean, German, French, Spanish, Portuguese, and Italian; pronunciation, Chinese definitions, examples, language-specific fields, and tags |
 
-Both Skills generate unencrypted `.wink` files locally with Python 3 and validate every completed package before delivery. The Wink app source code is not part of this repository.
+Both Skills generate unencrypted `.wink` files locally with Python 3 and validate every completed artifact before delivery. Explicit standalone-card or pack requests take priority. When the product is unspecified, one final card becomes a standalone card and two or more become a pack. The Wink app source code is not part of this repository.
 
 ## Quick start
 
@@ -47,6 +47,17 @@ words or phrases from this document. Add concise Chinese definitions,
 one natural example with translation, and section-based tags,
 then build and validate the .wink vocabulary pack.
 ```
+
+### Standalone card
+
+```text
+Use $generate-twinkling-pack to turn the following fact into one standalone
+.wink card, not a pack, then validate the file.
+```
+
+Wink asks the user to choose a destination pack when importing a standalone card, so standalone cards do not contain a pack name or tag. Use a pack for multiple cards.
+
+Generic requests such as "make flashcards from this PDF" use the final card count: one card exports as a standalone card; two or more export as a pack. Explicitly requesting a pack still creates a pack when it contains only one card.
 
 ## Image occlusion
 

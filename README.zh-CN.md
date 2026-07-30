@@ -2,16 +2,16 @@
 
 [English](README.md)
 
-本仓库开放用于生成 `.wink` 闪卡包的 Skill、格式说明、生成器、校验器和示例。
+本仓库开放用于生成 `.wink` 独立闪卡或闪卡包的 Skill、格式说明、生成器、校验器和示例。
 
 目前包含两套可以独立安装的 AI 制卡 Skill：
 
 | Skill | 生成内容 | 主要能力 |
 | --- | --- | --- |
-| [`generate-twinkling-pack`](skills/generate-twinkling-pack/) | 正反面笔记卡、单选题和多选题 | 混合卡包、富文本、层级 Tag、普通图片，以及笔记卡原生矩形图片挖空 |
-| [`generate-twinkling-word-pack`](skills/generate-twinkling-word-pack/) | Wink 原生单词卡 | 支持英语、日语、韩语、德语、法语、西班牙语、葡萄牙语和意大利语，可生成读音、中文释义、例句、语言字段和 Tag |
+| [`generate-twinkling-pack`](skills/generate-twinkling-pack/) | 独立正反面笔记卡、单选题、多选题，或混合卡包 | 富文本、层级 Tag、普通图片，以及笔记卡原生矩形图片挖空 |
+| [`generate-twinkling-word-pack`](skills/generate-twinkling-word-pack/) | Wink 原生独立单词卡或单词卡包 | 支持英语、日语、韩语、德语、法语、西班牙语、葡萄牙语和意大利语，可生成读音、中文释义、例句、语言字段和 Tag |
 
-两套 Skill 都使用 Python 3 在本地生成未加密的 `.wink` 文件，并在交付前自动校验。闪卡 App 本体源码不在本仓库的开源范围内。
+两套 Skill 都使用 Python 3 在本地生成未加密的 `.wink` 文件，并在交付前自动校验。明确要求独立卡片或卡包时，以用户指定为准；没有指定时，最终只有 1 张就导出独立卡片，2 张及以上导出卡包。闪卡 App 本体源码不在本仓库的开源范围内。
 
 ## 最简单的安装方法
 
@@ -45,6 +45,17 @@
 根据原文语境编写简洁的中文释义，每个词添加一个自然例句和翻译，
 按小节建立 Tag，最后生成并校验 .wink 单词卡包。
 ```
+
+## 独立卡片用法
+
+```text
+使用 $generate-twinkling-pack，把下面的知识点制作成一张 .wink 独立卡片，
+不要生成卡包。完成后校验文件。
+```
+
+独立卡片导入时由用户选择目标卡包，因此不包含卡包名和 Tag。多张卡片仍应生成卡包。
+
+“把这个 PDF 生成闪卡”这类说法没有指定容器，Skill 会按最终数量决定：1 张导出独立卡片，2 张及以上导出卡包。明确要求卡包时，即使最终只有 1 张也仍然导出卡包。
 
 ## 图片挖空
 

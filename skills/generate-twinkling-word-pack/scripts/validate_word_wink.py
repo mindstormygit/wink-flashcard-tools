@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Strictly validate native WordDocument .wink vocabulary packs."""
+"""Strictly validate native WordDocument .wink packs or cards."""
 
 import argparse
 import base64
@@ -308,7 +308,7 @@ def _validate_document(card, index, lang_code):
     }
 
 
-def _validate_content(content):
+def _validate_pack_content(content):
     _require(isinstance(content, dict), "content.json root must be an object")
     _require(
         PACK_REQUIRED_KEYS.issubset(content)
@@ -383,6 +383,49 @@ def _validate_content(content):
     }
 
 
+def _validate_content(content):
+    _require(isinstance(content, dict), "content.json root must be an object")
+    if CARD_REQUIRED_KEYS.issubset(content):
+        _require(
+            set(content) == CARD_REQUIRED_KEYS,
+            "standalone word card has missing or unexpected fields",
+        )
+        document = _decode_base64_json(content["rtf"], "rtf")
+        _require(
+            isinstance(document, dict),
+            "rtf must contain a WordDocument object",
+        )
+        lang_code = document.get("langCode")
+        _require(
+            isinstance(lang_code, str) and lang_code in SUPPORTED_LANG_CODES,
+            "rtf.langCode is unsupported",
+        )
+        user_info = json.dumps(
+            {
+                "wordPackInfo": True,
+                "wordPackLanguageCode": lang_code,
+            },
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        summary = _validate_pack_content(
+            {
+                "name": "Standalone word card",
+                "cards": [content],
+                "version": APP_DOCUMENT_VERSION,
+                "userInfo": base64.b64encode(user_info).decode("ascii"),
+            }
+        )
+        summary["name"] = None
+        summary["product"] = "card"
+        summary["word"] = content["sidea"]
+        return summary
+
+    summary = _validate_pack_content(content)
+    summary["product"] = "pack"
+    return summary
+
+
 def validate_word_wink(path):
     _require(path.suffix.lower() == ".wink", "filename must end in .wink")
     _require(path.is_file(), f"file not found: {path}")
@@ -396,7 +439,7 @@ def validate_word_wink(path):
         )
         _require(
             len(infos) == 1 and infos[0].filename == "content.json",
-            "word packs must contain only content.json",
+            "word artifacts must contain only content.json",
         )
         info = infos[0]
         path_in_archive = PurePosixPath(info.filename)
@@ -416,7 +459,10 @@ def validate_word_wink(path):
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(
-        description="Validate a native WordDocument TwinklingCard .wink pack."
+        description=(
+            "Validate a native WordDocument TwinklingCard .wink pack or "
+            "standalone card."
+        )
     )
     parser.add_argument("wink", type=Path, help=".wink file to validate")
     return parser.parse_args(argv)
@@ -429,14 +475,22 @@ def main(argv=None):
     except (ValidationError, OSError, zipfile.BadZipFile) as error:
         print(f"INVALID: {error}", file=sys.stderr)
         return 1
-    print(
-        f"VALID: pack {summary['name']!r}, language {summary['lang_code']}, "
-        f"{summary['word_count']} AI-authored words, "
-        f"{summary['example_count']} examples, "
-        f"{summary['extra_count']} extra fields, "
-        f"{summary['tag_count']} tags, "
-        f"{summary['tagged_card_count']} tagged cards"
-    )
+    if summary["product"] == "card":
+        print(
+            f"VALID: standalone word card {summary['word']!r}, "
+            f"language {summary['lang_code']}, "
+            f"{summary['example_count']} examples, "
+            f"{summary['extra_count']} extra fields"
+        )
+    else:
+        print(
+            f"VALID: pack {summary['name']!r}, language {summary['lang_code']}, "
+            f"{summary['word_count']} AI-authored words, "
+            f"{summary['example_count']} examples, "
+            f"{summary['extra_count']} extra fields, "
+            f"{summary['tag_count']} tags, "
+            f"{summary['tagged_card_count']} tagged cards"
+        )
     return 0
 
 

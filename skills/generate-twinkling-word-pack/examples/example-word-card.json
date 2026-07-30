@@ -1,0 +1,23 @@
+{
+  "langCode": "en",
+  "words": [
+    {
+      "word": "resilient",
+      "phonetic": "/rɪˈzɪliənt/",
+      "definition": "adj. 能迅速恢复的；有适应力的",
+      "examples": [
+        {
+          "sentence": "The system is resilient to temporary failures.",
+          "translation": "该系统能够从暂时性故障中迅速恢复。"
+        }
+      ],
+      "extras": [
+        {
+          "label": "音节",
+          "content": "re·sil·ient",
+          "templateKey": "en.syllable"
+        }
+      ]
+    }
+  ]
+}

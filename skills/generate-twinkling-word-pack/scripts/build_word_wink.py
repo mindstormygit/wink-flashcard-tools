@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build an unencrypted TwinklingCard WordDocument .wink vocabulary pack."""
+"""Build an unencrypted TwinklingCard WordDocument .wink pack or card."""
 
 import argparse
 import base64
@@ -18,6 +18,7 @@ WORD_DOCUMENT_VERSION = 100
 WORD_DOCUMENT_TYPE = 3
 SUPPORTED_LANG_CODES = {"en", "ja", "ko", "de", "fr", "es", "pt", "it"}
 ROOT_KEYS = {"name", "langCode", "words", "tags"}
+PRODUCT_CHOICES = ("auto", "pack", "card")
 WORD_REQUIRED_KEYS = {"word", "definition"}
 WORD_OPTIONAL_KEYS = {"phonetic", "examples", "extras", "tag"}
 EXAMPLE_KEYS = {"sentence", "translation"}
@@ -313,7 +314,7 @@ def _normalize_word(item, index, lang_code, tags_by_id):
     }
 
 
-def load_source(path):
+def load_source(path, product="auto"):
     try:
         source = json.loads(path.read_text(encoding="utf-8"))
     except OSError as error:
@@ -323,7 +324,31 @@ def load_source(path):
 
     if not isinstance(source, dict) or set(source) - ROOT_KEYS:
         raise InputError("input root has unsupported fields or is not an object")
-    name = _text(source.get("name"), "name", max_length=500)
+    if product not in PRODUCT_CHOICES:
+        raise InputError(
+            "product must be one of " + ", ".join(PRODUCT_CHOICES)
+        )
+    words_value = source.get("words")
+    if not isinstance(words_value, list) or not words_value:
+        raise InputError("words must be a non-empty array")
+    resolved_product = (
+        "card" if product == "auto" and len(words_value) == 1 else product
+    )
+    if resolved_product == "auto":
+        resolved_product = "pack"
+    if resolved_product == "card" and len(words_value) != 1:
+        raise InputError("standalone card output requires exactly one word")
+
+    if resolved_product == "card":
+        unsupported = {"name", "tags"} & set(source)
+        if unsupported:
+            raise InputError(
+                "standalone card input does not support root fields: "
+                + ", ".join(sorted(unsupported))
+            )
+        name = None
+    else:
+        name = _text(source.get("name"), "name", max_length=500)
     lang_code = _text(
         source.get("langCode"),
         "langCode",
@@ -334,18 +359,21 @@ def load_source(path):
         raise InputError(
             "langCode must be one of " + ", ".join(sorted(SUPPORTED_LANG_CODES))
         )
-    if "tags" in source:
+    if resolved_product == "pack" and "tags" in source:
         tags, tags_by_id = _normalize_tags(source["tags"])
     else:
         tags, tags_by_id = [], {}
-    words_value = source.get("words")
-    if not isinstance(words_value, list) or not words_value:
-        raise InputError("words must be a non-empty array")
     if len(words_value) > MAX_WORDS:
         raise InputError(f"words exceeds the {MAX_WORDS}-entry limit")
     words = []
     seen_words = set()
     for index, item in enumerate(words_value):
+        if (
+            resolved_product == "card"
+            and isinstance(item, dict)
+            and "tag" in item
+        ):
+            raise InputError("standalone cards do not carry pack tags")
         word = _normalize_word(item, index, lang_code, tags_by_id)
         signature = word["word"].casefold()
         if signature in seen_words:
@@ -357,6 +385,7 @@ def load_source(path):
         "langCode": lang_code,
         "words": words,
         "tags": [tag["vo"] for tag in tags],
+        "product": resolved_product,
     }
 
 
@@ -373,26 +402,30 @@ def _word_document(word, lang_code):
     }
 
 
+def _word_card_vo(word, lang_code):
+    document = _word_document(word, lang_code)
+    raw_document = json.dumps(
+        document, ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")
+    card = {
+        "uuid": uuid.uuid4().hex,
+        "sidea": word["word"],
+        "sideb": word["definition"],
+        "flag": 0,
+        "rtf": base64.b64encode(raw_document).decode("ascii"),
+        "sideaAttIds": [],
+        "sidebAttIds": [],
+        "version": APP_DOCUMENT_VERSION,
+    }
+    if word["tag"] is not None:
+        card["tag"] = word["tag"]
+    return card
+
+
 def build_pack(source):
-    cards = []
-    for word in source["words"]:
-        document = _word_document(word, source["langCode"])
-        raw_document = json.dumps(
-            document, ensure_ascii=False, separators=(",", ":")
-        ).encode("utf-8")
-        card = {
-            "uuid": uuid.uuid4().hex,
-            "sidea": word["word"],
-            "sideb": word["definition"],
-            "flag": 0,
-            "rtf": base64.b64encode(raw_document).decode("ascii"),
-            "sideaAttIds": [],
-            "sidebAttIds": [],
-            "version": APP_DOCUMENT_VERSION,
-        }
-        if word["tag"] is not None:
-            card["tag"] = word["tag"]
-        cards.append(card)
+    cards = [
+        _word_card_vo(word, source["langCode"]) for word in source["words"]
+    ]
 
     user_info = json.dumps(
         {
@@ -413,14 +446,24 @@ def build_pack(source):
     return pack
 
 
-def write_wink(pack, output_path):
+def build_card(source):
+    return _word_card_vo(source["words"][0], source["langCode"])
+
+
+def build_artifact(source, product):
+    if product == "card":
+        return build_card(source)
+    return build_pack(source)
+
+
+def write_wink(content_root, output_path):
     if output_path.suffix.lower() != ".wink":
         raise InputError("output filename must end in .wink")
     if output_path.exists():
         raise FileExistsError(f"output already exists: {output_path}")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     content = json.dumps(
-        pack, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+        content_root, ensure_ascii=False, separators=(",", ":"), sort_keys=True
     ).encode("utf-8")
     try:
         with zipfile.ZipFile(
@@ -437,10 +480,19 @@ def write_wink(pack, output_path):
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(
-        description="Build an AI-authored native WordDocument .wink pack."
+        description=(
+            "Build an AI-authored native WordDocument .wink pack or "
+            "standalone card."
+        )
     )
     parser.add_argument("input", type=Path, help="UTF-8 words JSON")
     parser.add_argument("output", type=Path, help="new .wink output path")
+    parser.add_argument(
+        "--product",
+        choices=PRODUCT_CHOICES,
+        default="auto",
+        help="artifact root type (default: auto by final word count)",
+    )
     return parser.parse_args(argv)
 
 
@@ -448,8 +500,8 @@ def main(argv=None):
     args = parse_args(argv)
     output_created = False
     try:
-        source = load_source(args.input)
-        write_wink(build_pack(source), args.output)
+        source = load_source(args.input, args.product)
+        write_wink(build_artifact(source, source["product"]), args.output)
         output_created = True
         summary = validate_word_wink(args.output)
     except (
@@ -464,15 +516,23 @@ def main(argv=None):
             args.output.unlink(missing_ok=True)
         print(f"ERROR: {error}", file=sys.stderr)
         return 1
-    print(
-        f"Created {args.output} — pack {summary['name']!r}, "
-        f"language {summary['lang_code']}, "
-        f"{summary['word_count']} AI-authored words, "
-        f"{summary['example_count']} examples, "
-        f"{summary['extra_count']} extra fields, "
-        f"{summary['tag_count']} tags, "
-        f"{summary['tagged_card_count']} tagged cards"
-    )
+    if summary["product"] == "card":
+        print(
+            f"Created {args.output} — standalone word card "
+            f"{summary['word']!r}, language {summary['lang_code']}, "
+            f"{summary['example_count']} examples, "
+            f"{summary['extra_count']} extra fields"
+        )
+    else:
+        print(
+            f"Created {args.output} — pack {summary['name']!r}, "
+            f"language {summary['lang_code']}, "
+            f"{summary['word_count']} AI-authored words, "
+            f"{summary['example_count']} examples, "
+            f"{summary['extra_count']} extra fields, "
+            f"{summary['tag_count']} tags, "
+            f"{summary['tagged_card_count']} tagged cards"
+        )
     return 0
 
 

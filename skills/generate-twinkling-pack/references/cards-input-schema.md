@@ -1,10 +1,25 @@
 # Cards Input Schema
 
-Write one UTF-8 JSON object with:
+The builder supports two products and three selection modes:
 
-- `name`: Non-empty card-pack name.
-- `tags`: Optional non-empty array of tag definitions.
-- `cards`: Non-empty array of card objects.
+- Automatic (default): one final card selects the standalone-card product; two or more select the pack product.
+- Pack (`--product pack`): the root contains a non-empty `name`, an optional non-empty `tags` array, and a non-empty `cards` array. This can intentionally contain one card.
+- Standalone card (`--product card`, or automatic mode with one card): the root contains only `cards`, with exactly one card. Do not include root `name`, root `tags`, or a card-level `tag`.
+
+Example standalone-card input:
+
+```json
+{
+  "cards": [
+    {
+      "front": "What does active recall test?",
+      "back": "Whether the learner can retrieve an answer without seeing it."
+    }
+  ]
+}
+```
+
+The standalone `.wink` imports into a pack chosen by the user. If more than one card is needed, build a pack instead.
 
 ## Card Types
 
@@ -13,7 +28,7 @@ The `cards` array may mix:
 - Note cards: omit `type` or set `"type": "note"`. These use `front` and `back` and support text, ordinary images, and native image occlusion.
 - Choice cards: set `"type": "choice"`. These use `question`, `options`, and an optional explanatory `note`. Read [choice-cards.md](choice-cards.md) before authoring them.
 
-The builder preserves the input order. Both types may reference the same pack-level tags.
+The builder preserves the input order. In pack mode, both types may reference the same pack-level tags.
 
 ## Tags
 
