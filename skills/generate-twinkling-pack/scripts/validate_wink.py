@@ -808,7 +808,7 @@ def validate_wink(path):
 def parse_args(argv):
     parser = argparse.ArgumentParser(
         description=(
-            "Validate a mixed NoteLegacy/Choice TwinklingCard .wink pack "
+            "Validate a mixed NoteLegacy/Choice WinkNotes .wink pack "
             "or standalone card."
         )
     )

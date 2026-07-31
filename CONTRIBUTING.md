@@ -31,4 +31,4 @@ python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \
 python3 scripts/package_skills.py
 ```
 
-Format changes must remain compatible with the current Wink Codable models and should include a clear changelog entry.
+Format changes must remain compatible with the current WinkNotes Codable models and should include a clear changelog entry.

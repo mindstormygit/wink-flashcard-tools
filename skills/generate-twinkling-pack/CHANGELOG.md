@@ -1,6 +1,10 @@
 # Changelog
 
-All notable changes to Generate Twinkling Pack are documented here.
+All notable changes to Generate WinkNotes Pack are documented here.
+
+## 1.2.1 — 2026-07-30
+
+- Aligns the Chinese product name with “闪卡” and the English product name with WinkNotes.
 
 ## 1.2.0 — 2026-07-30
 
@@ -29,7 +33,7 @@ All notable changes to Generate Twinkling Pack are documented here.
 - Supports hierarchical tags and rich-text spans.
 - Supports ordinary image attachments.
 - Supports native rectangular `.rimg` image occlusions.
-- Validates Wink structure, versions, attachments, tag paths, and duplicate cards.
+- Validates WinkNotes structure, versions, attachments, tag paths, and duplicate cards.
 - Includes a Chinese user guide, format specification, input schema, authoring guide, and example pack.
 
 ### Limitations in 1.0.0

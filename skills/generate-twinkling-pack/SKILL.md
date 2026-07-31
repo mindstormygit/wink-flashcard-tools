@@ -1,9 +1,9 @@
 ---
 name: generate-twinkling-pack
-description: Generate importable, unencrypted TwinklingCard .wink standalone flashcards or flashcard packs from PDFs, documents, notes, images, webpages, or other source material. Use when an agent needs to create one front/back NoteLegacyDocument or ChoiceDocument card for import into an existing pack, or a mixed pack of note and single- or multiple-answer choice cards, with optional pack-level hierarchical tags, rich-text formatting, ordinary inline images, or native RichImage image-occlusion attachments. Also use when a user asks what this skill can do, how to install, share, or use it, or requests example prompts or troubleshooting. This version excludes word cards, media inside choice cards, freehand rich-image drawings, audio, and other attachment types.
+description: Generate importable, unencrypted WinkNotes .wink standalone flashcards or flashcard packs from PDFs, documents, notes, images, webpages, or other source material. Use when an agent needs to create one front/back NoteLegacyDocument or ChoiceDocument card for import into an existing pack, or a mixed pack of note and single- or multiple-answer choice cards, with optional pack-level hierarchical tags, rich-text formatting, ordinary inline images, or native RichImage image-occlusion attachments. Also use when a user asks what this skill can do, how to install, share, or use it, or requests example prompts or troubleshooting. This version excludes word cards, media inside choice cards, freehand rich-image drawings, audio, and other attachment types.
 ---
 
-# Generate Twinkling Cards and Packs
+# Generate WinkNotes Cards and Packs
 
 Create either one standalone card for import into an existing pack or a source-grounded pack of recall and recognition cards. Choose front/back notes or single-/multiple-answer choices according to the learning objective. Packs may use a compact tag taxonomy; both products support restrained rich-text formatting, useful inline images, and native image occlusions where the card type permits them. Use the bundled scripts to serialize and validate the `.wink` artifact. Never hand-author `content.json`, `.rimg` property lists, internal tag paths, span offsets, attachment IDs, style bitmasks, or Base64 `rtf` values.
 
@@ -17,7 +17,7 @@ When the user asks how to install or use this skill, what inputs it accepts, wha
    - If the user explicitly requests a card pack, build a pack even when it contains one card.
    - If the user explicitly requests one standalone `.wink` card, build a standalone card and require exactly one card.
    - Treat generic wording such as "make flashcards from this PDF" as unspecified. After drafting, build a standalone card when the final count is one; build a pack when it is two or more.
-   - Standalone cards do not have a pack name or tags. Wink asks the user to choose the destination pack during import.
+   - Standalone cards do not have a pack name or tags. WinkNotes asks the user to choose the destination pack during import.
 2. Read the source completely enough to identify its structure and central ideas.
    - For a PDF, use an available PDF extraction or OCR capability first.
    - Ignore repeated headers, footers, page numbers, and OCR noise.
@@ -56,23 +56,23 @@ When the user asks how to install or use this skill, what inputs it accepts, wha
 ## Constraints
 
 - Generate front/back `NoteLegacyDocument` cards and text-only `ChoiceDocument` cards as one standalone card or together in any order in a pack.
-- A standalone-card product contains exactly one root `CardVO`. It has no pack name or tag; Wink assigns its destination pack and import tag during import.
+- A standalone-card product contains exactly one root `CardVO`. It has no pack name or tag; WinkNotes assigns its destination pack and import tag during import.
 - A choice card must contain 2–26 unique options and at least one correct option. One correct option makes it single-choice; multiple correct options make it multiple-choice.
 - Choice questions, options, and explanations support text formatting described in the choice-card reference, but do not support `image` or `richImage` segments in this version.
 - In pack products, assign at most one tag to each card. Tags may form a hierarchy and are optional.
-- Reference tags by input ID; let the build script generate Wink's internal hierarchical paths.
+- Reference tags by input ID; let the build script generate WinkNotes' internal hierarchical paths.
 - Support ordinary inline images and rectangular native image occlusions. Source images may be HEIC, PNG, JPEG/JPG, WebP, or TIFF.
-- Never simulate image occlusion by baking colored blocks into a PNG or by putting a masked image on the front and an unmasked image on the back. Use a `richImage` segment so Wink receives one native `.rimg` attachment with interactive redaction objects.
+- Never simulate image occlusion by baking colored blocks into a PNG or by putting a masked image on the front and an unmasked image on the back. Use a `richImage` segment so WinkNotes receives one native `.rimg` attachment with interactive redaction objects.
 - Do not emit freehand rich-image drawings, ellipse/polygon occlusions, audio, video, or pasted Base64 attachment data.
 - Use local image paths in the input JSON. Relative paths resolve from the JSON file's directory; do not place remote URLs in `image` or `richImage.image`.
 - Limit each card side to at most 15 images.
 - Let the build script compute all UTF-16 span locations and lengths, attachment IDs, and media filenames.
 - Create an unencrypted ZIP with `content.json` first at its root and, when needed, image files under `media/`. `content.json` contains one root `CardVO` for a standalone card or one root `CardPackVO` for a pack.
 - Treat Markdown markers as literal text; express supported formatting through segment fields.
-- Use highlight deliberately: TwinklingCard treats mark-pen highlighting as occlusion content during analysis.
+- Use highlight deliberately: WinkNotes treats mark-pen highlighting as occlusion content during analysis.
 - Refuse to deliver an artifact when validation fails.
 - Do not overwrite an existing output file; choose a new path or obtain explicit permission first.
 
 ## Format Maintenance
 
-Read [wink-format.md](references/wink-format.md) only when changing the serializer or investigating compatibility. Keep its version constants synchronized with the TwinklingCard Codable models.
+Read [wink-format.md](references/wink-format.md) only when changing the serializer or investigating compatibility. Keep its version constants synchronized with the WinkNotes Codable models.

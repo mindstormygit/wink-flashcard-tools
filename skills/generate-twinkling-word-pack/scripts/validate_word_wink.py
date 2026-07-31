@@ -460,7 +460,7 @@ def validate_word_wink(path):
 def parse_args(argv):
     parser = argparse.ArgumentParser(
         description=(
-            "Validate a native WordDocument TwinklingCard .wink pack or "
+            "Validate a native WordDocument WinkNotes .wink pack or "
             "standalone card."
         )
     )

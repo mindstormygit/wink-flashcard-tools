@@ -1,6 +1,6 @@
-# Wink Format Index
+# WinkNotes Format Index
 
-`.wink` is an importable, self-contained flashcard format used by the Wink app. It can contain one standalone card or one card pack.
+`.wink` is an importable, self-contained flashcard format used by WinkNotes. It can contain one standalone card or one card pack.
 
 ## Container
 

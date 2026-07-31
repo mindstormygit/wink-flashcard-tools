@@ -1,8 +1,8 @@
-# Wink Flashcard Tools
+# WinkNotes Flashcard Tools
 
 [简体中文](README.zh-CN.md)
 
-Open Skills, format references, builders, validators, and examples for generating importable `.wink` standalone flashcards or flashcard packs for the Wink app.
+Open Skills, format references, builders, validators, and examples for generating importable `.wink` standalone flashcards or flashcard packs for WinkNotes.
 
 This repository contains the complete source of two independent AI-agent Skills:
 
@@ -11,7 +11,7 @@ This repository contains the complete source of two independent AI-agent Skills:
 | [`generate-twinkling-pack`](skills/generate-twinkling-pack/) | Standalone front/back note or choice cards, or mixed packs | Rich text, hierarchical tags, inline images, and native rectangular image occlusion on note cards |
 | [`generate-twinkling-word-pack`](skills/generate-twinkling-word-pack/) | Standalone native vocabulary cards or vocabulary packs | English, Japanese, Korean, German, French, Spanish, Portuguese, and Italian; pronunciation, Chinese definitions, examples, language-specific fields, and tags |
 
-Both Skills generate unencrypted `.wink` files locally with Python 3 and validate every completed artifact before delivery. Explicit standalone-card or pack requests take priority. When the product is unspecified, one final card becomes a standalone card and two or more become a pack. The Wink app source code is not part of this repository.
+Both Skills generate unencrypted `.wink` files locally with Python 3 and validate every completed artifact before delivery. Explicit standalone-card or pack requests take priority. When the product is unspecified, one final card becomes a standalone card and two or more become a pack. The WinkNotes source code is not part of this repository.
 
 ## Quick start
 
@@ -55,7 +55,7 @@ Use $generate-twinkling-pack to turn the following fact into one standalone
 .wink card, not a pack, then validate the file.
 ```
 
-Wink asks the user to choose a destination pack when importing a standalone card, so standalone cards do not contain a pack name or tag. Use a pack for multiple cards.
+WinkNotes asks the user to choose a destination pack when importing a standalone card, so standalone cards do not contain a pack name or tag. Use a pack for multiple cards.
 
 Generic requests such as "make flashcards from this PDF" use the final card count: one card exports as a standalone card; two or more export as a pack. Explicitly requesting a pack still creates a pack when it contains only one card.
 
@@ -63,9 +63,9 @@ Generic requests such as "make flashcards from this PDF" use the final card coun
 
 `generate-twinkling-pack` can create native rectangular `.rimg` image occlusions on note cards. This advanced workflow requires a multimodal model that can understand the source image. Choice cards are text-only in the current version.
 
-## Wink format
+## WinkNotes format
 
-Start with the [Wink format index](docs/wink-format.md). Detailed serializer references live with each independently distributable Skill:
+Start with the [WinkNotes format index](docs/wink-format.md). Detailed serializer references live with each independently distributable Skill:
 
 - [Note and choice pack format](skills/generate-twinkling-pack/references/wink-format.md)
 - [Word pack format](skills/generate-twinkling-word-pack/references/wink-format.md)
@@ -88,8 +88,8 @@ The command creates two reproducible ZIP archives in `dist/`. Git tags matching 
 
 ## App
 
-- [Wink website](https://card.detailsoft.cn/)
-- [Wink on the App Store](https://apps.apple.com/cn/app/id1515687192)
+- [WinkNotes website](https://card.detailsoft.cn/)
+- [WinkNotes on the App Store](https://apps.apple.com/cn/app/id1515687192)
 
 ## License
 

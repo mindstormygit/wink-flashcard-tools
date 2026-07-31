@@ -32,13 +32,13 @@
 - Avoid “all of the above,” “none of the above,” overlapping options, double negatives, and formatting that reveals the answer.
 - Do not duplicate option text. Include at least two options and at least one correct answer.
 - Add a concise explanatory note that states why the correct option is correct and, when useful, why a tempting distractor is wrong.
-- Do not prefix option content with letters or numbers; Wink displays option labels.
+- Do not prefix option content with letters or numbers; WinkNotes displays option labels.
 
 ## Formatting
 
 - Use a plain string when formatting adds no learning value.
 - Use bold for a term, condition, or conclusion that deserves visual emphasis.
-- Use highlight only for content intentionally treated as mark-pen/occlusion material by TwinklingCard.
+- Use highlight only for content intentionally treated as mark-pen/occlusion material by WinkNotes.
 - Use text color sparingly to distinguish categories, warnings, or contrasted concepts.
 - Use underline and strikethrough only when their conventional meaning is clear.
 - Use super/subscript for compact scientific or mathematical notation.

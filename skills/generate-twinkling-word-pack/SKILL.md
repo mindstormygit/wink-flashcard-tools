@@ -1,9 +1,9 @@
 ---
 name: generate-twinkling-word-pack
-description: Generate importable, unencrypted TwinklingCard .wink standalone vocabulary cards or vocabulary packs containing native WordDocument cards. Use when Codex or another user-selected AI agent needs to turn one word or a word list, textbook, PDF, webpage, lesson, topic, or language-learning source into English, Japanese, Korean, German, French, Spanish, Portuguese, or Italian word cards with AI-authored pronunciation, Chinese definitions, examples, language-specific fields, and optional pack-level hierarchical tags. This skill does not call private app services, dictionary APIs, or a separate AI service.
+description: Generate importable, unencrypted WinkNotes .wink standalone vocabulary cards or vocabulary packs containing native WordDocument cards. Use when Codex or another user-selected AI agent needs to turn one word or a word list, textbook, PDF, webpage, lesson, topic, or language-learning source into English, Japanese, Korean, German, French, Spanish, Portuguese, or Italian word cards with AI-authored pronunciation, Chinese definitions, examples, language-specific fields, and optional pack-level hierarchical tags. This skill does not call private app services, dictionary APIs, or a separate AI service.
 ---
 
-# Generate Twinkling Word Cards and Packs
+# Generate WinkNotes Word Cards and Packs
 
 Create either one standalone vocabulary card for import into an existing pack or a one-language vocabulary pack. Lexical content is authored by the current user-selected AI agent. Do not call private app services, dictionary APIs, or another AI endpoint. Serialize only through the bundled scripts; never hand-author Base64 `rtf`, `WordDocument` IDs, internal tag paths, pack `userInfo`, or ZIP contents.
 
@@ -17,7 +17,7 @@ When the user asks how to install, share, or use this skill, read [user-guide.zh
    - If the user explicitly requests a word-card pack, build a pack even when it contains one word.
    - If the user explicitly requests one standalone `.wink` word card, build a standalone card and require exactly one word.
    - Treat generic wording such as "make word cards from this PDF" as unspecified. After drafting, build a standalone card when the final count is one; build a pack when it is two or more.
-   - Standalone cards do not have a pack name or tags. Wink asks the user to choose the destination pack during import.
+   - Standalone cards do not have a pack name or tags. WinkNotes asks the user to choose the destination pack during import.
 2. Identify the requested words and one language.
    - If the source is a PDF, webpage, or document, extract words that are useful for the learner instead of converting every token.
    - Preserve the source spelling and remove exact or case-only duplicates.

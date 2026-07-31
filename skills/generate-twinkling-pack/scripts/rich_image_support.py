@@ -1,4 +1,4 @@
-"""Build and validate native Wink RichImage (.rimg) occlusion attachments."""
+"""Build and validate native WinkNotes RichImage (.rimg) occlusion attachments."""
 
 import math
 import plistlib

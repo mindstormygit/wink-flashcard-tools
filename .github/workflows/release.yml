@@ -41,4 +41,4 @@ jobs:
             dist/generate-twinkling-word-pack.zip \
             dist/SHA256SUMS.txt \
             --generate-notes \
-            --title "Wink Flashcard Tools ${GITHUB_REF_NAME}"
+            --title "WinkNotes Flashcard Tools ${GITHUB_REF_NAME}"

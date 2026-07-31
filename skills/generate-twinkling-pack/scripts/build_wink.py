@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a mixed NoteLegacy/Choice TwinklingCard pack or card as a .wink."""
+"""Build a mixed NoteLegacy/Choice WinkNotes pack or card as a .wink."""
 
 import argparse
 import base64
@@ -122,7 +122,7 @@ def _tag_name(value, label):
     if "\n" in name or "\r" in name:
         raise InputError(f"{label} must be a single line")
     if TAG_PATH_SEPARATOR in name:
-        raise InputError(f"{label} contains Wink's reserved tag separator")
+        raise InputError(f"{label} contains WinkNotes' reserved tag separator")
     return name
 
 
@@ -858,7 +858,7 @@ def write_wink(content_root, images, output_path):
 def parse_args(argv):
     parser = argparse.ArgumentParser(
         description=(
-            "Build an unencrypted mixed NoteLegacy/Choice TwinklingCard "
+            "Build an unencrypted mixed NoteLegacy/Choice WinkNotes "
             ".wink pack or standalone card."
         )
     )

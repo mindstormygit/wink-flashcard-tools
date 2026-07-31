@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create reproducible release ZIP files for both Wink Skills."""
+"""Create reproducible release ZIP files for both WinkNotes Skills."""
 
 from __future__ import annotations
 

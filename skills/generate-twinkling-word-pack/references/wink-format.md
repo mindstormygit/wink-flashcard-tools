@@ -1,4 +1,4 @@
-# Word Pack Wink Format
+# WinkNotes Word Pack Format
 
 Use this reference only when maintaining or debugging the serializer.
 
@@ -10,7 +10,7 @@ Use this reference only when maintaining or debugging the serializer.
 
 ## Root Product
 
-`content.json` contains either one word-pack `CardPackVO` or one standalone word-card `CardVO`. The standalone card is not wrapped in a one-card pack. During import, Wink asks the user to choose its destination pack.
+`content.json` contains either one word-pack `CardPackVO` or one standalone word-card `CardVO`. The standalone card is not wrapped in a one-card pack. During import, WinkNotes asks the user to choose its destination pack.
 
 ## Pack
 
@@ -23,7 +23,7 @@ The pack uses `CardPackVO.version = 6`. Its Base64 `userInfo` decodes to:
 }
 ```
 
-This makes the imported pack a native word pack. Optional tags use the same hierarchical `TagVO` paths as other Wink packs.
+This makes the imported pack a native word pack. Optional tags use the same hierarchical `TagVO` paths as other WinkNotes packs.
 
 ## Card
 

@@ -1,4 +1,4 @@
-# Mixed NoteLegacy and Choice Wink Format
+# WinkNotes Mixed NoteLegacy and Choice Format
 
 Use this reference when maintaining the scripts or diagnosing import compatibility.
 
@@ -13,7 +13,7 @@ Use this reference when maintaining the scripts or diagnosing import compatibili
 
 ## Root Product
 
-`content.json` contains either one `CardPackVO` for a pack or one `CardVO` for a standalone card. A standalone card is not wrapped in a one-card pack. During import, Wink asks the user to choose its destination pack and assigns the import tag, so the standalone root omits `tag`.
+`content.json` contains either one `CardPackVO` for a pack or one `CardVO` for a standalone card. A standalone card is not wrapped in a one-card pack. During import, WinkNotes asks the user to choose its destination pack and assigns the import tag, so the standalone root omits `tag`.
 
 ## Pack
 
@@ -84,7 +84,7 @@ For a standalone-card product, this `CardVO` is the root value of `content.json`
 
 For note cards, `sideaAttIds` and `sidebAttIds` list media filenames in inline occurrence order for their respective sides. The same filename is not reused across occurrences. Choice cards in this version are text-only and use empty attachment arrays.
 
-`tag` is optional. When present, it must exactly match a definition in the pack-level `tags` array. A `CardVO` can reference at most one tag. During import, TwinklingCard creates the hierarchy first and then assigns the card by its full tag path.
+`tag` is optional. When present, it must exactly match a definition in the pack-level `tags` array. A `CardVO` can reference at most one tag. During import, WinkNotes creates the hierarchy first and then assigns the card by its full tag path.
 
 ## NoteLegacyDocument
 
@@ -180,7 +180,7 @@ A native image-occlusion attachment uses `aes: "rimg"` and a media filename endi
 - `sv`: RichImage schema version.
 - `cv`: Initial content version.
 - `oi`: Unmodified source-image bytes.
-- `m`: Non-empty legacy mask array. On decode, Wink converts each item into a native rectangular redaction object.
+- `m`: Non-empty legacy mask array. On decode, WinkNotes converts each item into a native rectangular redaction object.
 - `layoutInfo`: CGRect property-list representation using normalized top-left coordinates in `0...1`.
 - `co`: Optional legacy mask color.
 - `u`: Attachment ID, equal to the media filename stem.
@@ -278,11 +278,11 @@ Choice text formatting uses `RTFPayload` spans:
 - `bc`: Optional background/highlight color.
 - `lk`: Optional absolute HTTP or HTTPS URL.
 
-Choice cards are text-only in this version. If any choice span has `bc`, the containing `CardVO.flag` is `2` so Wink recognizes occlusion content; otherwise it is `0`. `sidea` contains the question’s plain text, while `sideb` contains the option texts joined by newlines.
+Choice cards are text-only in this version. If any choice span has `bc`, the containing `CardVO.flag` is `2` so WinkNotes recognizes occlusion content; otherwise it is `0`. `sidea` contains the question’s plain text, while `sideb` contains the option texts joined by newlines.
 
 ## Import Remapping
 
-During import, TwinklingCard reads each media filename stem as the old attachment ID, creates a new `CardAttachment`, and calls `NoteLegacyDocument.replacing(attsID:)` to replace `at` with the new UUID. The package therefore remains self-contained while imported note cards receive fresh local attachment IDs. Choice cards in this version contain no attachments and require no remapping.
+During import, WinkNotes reads each media filename stem as the old attachment ID, creates a new `CardAttachment`, and calls `NoteLegacyDocument.replacing(attsID:)` to replace `at` with the new UUID. The package therefore remains self-contained while imported note cards receive fresh local attachment IDs. Choice cards in this version contain no attachments and require no remapping.
 
 ## Version Sources
 

@@ -1,4 +1,4 @@
-# Wink 闪卡开放工具
+# “闪卡”开放工具
 
 [English](README.md)
 
@@ -9,7 +9,7 @@
 | Skill | 生成内容 | 主要能力 |
 | --- | --- | --- |
 | [`generate-twinkling-pack`](skills/generate-twinkling-pack/) | 独立正反面笔记卡、单选题、多选题，或混合卡包 | 富文本、层级 Tag、普通图片，以及笔记卡原生矩形图片挖空 |
-| [`generate-twinkling-word-pack`](skills/generate-twinkling-word-pack/) | Wink 原生独立单词卡或单词卡包 | 支持英语、日语、韩语、德语、法语、西班牙语、葡萄牙语和意大利语，可生成读音、中文释义、例句、语言字段和 Tag |
+| [`generate-twinkling-word-pack`](skills/generate-twinkling-word-pack/) | “闪卡”App 原生独立单词卡或单词卡包 | 支持英语、日语、韩语、德语、法语、西班牙语、葡萄牙语和意大利语，可生成读音、中文释义、例句、语言字段和 Tag |
 
 两套 Skill 都使用 Python 3 在本地生成未加密的 `.wink` 文件，并在交付前自动校验。明确要求独立卡片或卡包时，以用户指定为准；没有指定时，最终只有 1 张就导出独立卡片，2 张及以上导出卡包。闪卡 App 本体源码不在本仓库的开源范围内。
 
@@ -59,11 +59,11 @@
 
 ## 图片挖空
 
-`generate-twinkling-pack` 支持在笔记卡中生成 Wink 原生矩形 `.rimg` 图片挖空。这属于进阶能力，需要能够理解图片的多模态模型。当前选择题为纯文字，图片和图片挖空用于笔记卡。
+`generate-twinkling-pack` 支持在笔记卡中生成“闪卡”App 原生矩形 `.rimg` 图片挖空。这属于进阶能力，需要能够理解图片的多模态模型。当前选择题为纯文字，图片和图片挖空用于笔记卡。
 
-## Wink 格式
+## “闪卡”格式
 
-先阅读 [Wink 格式索引](docs/wink-format.md)。两套 Skill 可以独立分发，因此完整格式细节保存在各自目录中：
+先阅读 [“闪卡”格式索引](docs/wink-format.md)。两套 Skill 可以独立分发，因此完整格式细节保存在各自目录中：
 
 - [笔记卡与选择题格式](skills/generate-twinkling-pack/references/wink-format.md)
 - [单词卡格式](skills/generate-twinkling-word-pack/references/wink-format.md)

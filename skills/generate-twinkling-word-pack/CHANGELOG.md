@@ -1,6 +1,10 @@
 # Changelog
 
-All notable changes to Generate Twinkling Word Pack are documented here.
+All notable changes to Generate WinkNotes Word Pack are documented here.
+
+## 1.2.1 — 2026-07-30
+
+- Aligns the Chinese product name with “闪卡” and the English product name with WinkNotes.
 
 ## 1.2.0 — 2026-07-30
 

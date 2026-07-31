@@ -48,7 +48,7 @@ Use a choice card when the learner should distinguish among plausible alternativ
 - `note`: Optional explanation as a non-empty string or text-segment array.
 - `tag`: Optional pack-level tag ID.
 
-Option text must be unique within a card. At least one option must be correct. Do not prefix options with `A.` or `B.`; Wink supplies option labels.
+Option text must be unique within a card. At least one option must be correct. Do not prefix options with `A.` or `B.`; WinkNotes supplies option labels.
 
 ## Formatting
 

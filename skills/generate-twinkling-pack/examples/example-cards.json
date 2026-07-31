@@ -91,7 +91,7 @@
     },
     {
       "type": "choice",
-      "question": "Generate Twinkling Pack 当前支持哪些卡片类型？",
+      "question": "闪卡生成 Skill 当前支持哪些卡片类型？",
       "options": [
         {
           "content": "正反面笔记卡",

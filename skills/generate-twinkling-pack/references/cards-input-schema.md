@@ -41,7 +41,7 @@ Each tag definition contains:
 
 IDs must be unique. Parent references may appear before or after their definitions, but must exist and must not form a cycle. Sibling tags must not resolve to the same name. Hierarchies may be at most 32 levels deep.
 
-Each note card must contain `front` and `back`, plus an optional `tag` containing one tag ID. Wink currently assigns at most one tag to a card. A card that omits `tag` is imported as untagged.
+Each note card must contain `front` and `back`, plus an optional `tag` containing one tag ID. WinkNotes currently assigns at most one tag to a card. A card that omits `tag` is imported as untagged.
 
 Each side may be either:
 
@@ -102,7 +102,7 @@ A native image occlusion contains exactly one `richImage` object:
 
 The builder embeds the original image and redaction rectangles in one native binary-plist `.rimg` file. Do not pre-draw or bake the masks into the source image. An occlusion segment counts as one attachment toward the 15-attachment side limit.
 
-Do not calculate offsets or add internal Wink keys. The builder converts segment boundaries to UTF-16 `f/l` ranges, combines style bits, creates attachment IDs, serializes native RichImages, copies media into `media/`, and omits spans from unformatted text.
+Do not calculate offsets or add internal WinkNotes keys. The builder converts segment boundaries to UTF-16 `f/l` ranges, combines style bits, creates attachment IDs, serializes native RichImages, copies media into `media/`, and omits spans from unformatted text.
 
 ## Example
 
@@ -207,4 +207,4 @@ Do not calculate offsets or add internal Wink keys. The builder converts segment
 }
 ```
 
-The builder converts tag IDs and parent references into the internal hierarchical paths expected by `TagVO`; never put Wink's `/$-#-$/` separator in the input. It rejects duplicate IDs or paths, missing parents, cycles, undefined card tags, malformed colors or links, unknown fields, invalid images or RichImage masks, more than 15 attachments on one side, whitespace-only content, exact duplicate cards, invalid JSON, and an existing output path. Inputs without `tags` remain valid.
+The builder converts tag IDs and parent references into the internal hierarchical paths expected by `TagVO`; never put WinkNotes' `/$-#-$/` separator in the input. It rejects duplicate IDs or paths, missing parents, cycles, undefined card tags, malformed colors or links, unknown fields, invalid images or RichImage masks, more than 15 attachments on one side, whitespace-only content, exact duplicate cards, invalid JSON, and an existing output path. Inputs without `tags` remain valid.

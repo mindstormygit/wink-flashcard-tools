@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build an unencrypted TwinklingCard WordDocument .wink pack or card."""
+"""Build an unencrypted WinkNotes WordDocument .wink pack or card."""
 
 import argparse
 import base64
@@ -112,7 +112,7 @@ def _normalize_tags(value):
             single_line=True,
         )
         if TAG_PATH_SEPARATOR in name:
-            raise InputError(f"{label}.name contains Wink's reserved separator")
+            raise InputError(f"{label}.name contains WinkNotes' reserved separator")
         parent = (
             _tag_id(item["parent"], f"{label}.parent")
             if "parent" in item

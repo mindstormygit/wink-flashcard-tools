@@ -1,4 +1,4 @@
-"""Shared validation for ordinary image attachments supported by TwinklingCard."""
+"""Shared validation for ordinary image attachments supported by WinkNotes."""
 
 from pathlib import Path
 
