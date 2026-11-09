@@ -39,9 +39,6 @@ When editing, carry forward existing cloze and choice ids, attachment references
   outside annotations. If either starts or ends inside an annotation, one explanation can
   come back as two annotations. For example, `{{note=血管}}主{{mute}}动脉{{/mute}}{{/note}}`
   still skips 动脉 during speech, but the annotation can be attached to 主 and 动脉 separately.
-- The encoder currently writes an empty inline formula as `$$`, which comes back as plain
-  text. With an unescaped dollar in its LaTeX, `a$b` exports as `$a$b$` and only `a`
-  comes back as math. Authors can write `{{math}}a$b{{/math}}` to read that expression in full.
 - Attachment bytes, intrinsic image dimensions and image content versions come from the
   resolved attachment and the card. The text carries the reference, caption and optional display width.
   An empty image caption reads as an absent `alt`. An empty audio title or the literal title
@@ -85,7 +82,7 @@ forms itself for round trips, or reads them only for compatibility.
 | `{{note=狐狸}}fox{{/note}}` | text annotation; its explanation does not change the original text |
 | `{{mute}}text{{/mute}}` | skip when reading aloud: the text is shown, searched and reviewed as usual but never spoken (use it for translations and side notes; questions, answers, explanations and hints are read aloud) |
 | `$x^2$` | inline formula (LaTeX) |
-| `{{math}} x {{/math}}` | inline formula whose LaTeX starts or ends with whitespace (`$…$` cannot); the text in between is raw LaTeX |
+| `{{math}} x {{/math}}` | inline formula that `$…$` cannot carry: LaTeX that is empty, starts or ends with whitespace, contains `$`, ends with `\`, or is directly followed by a digit; the text in between is raw LaTeX |
 | `{{size:large}}text{{/size}}` | font size level: `small` (0.8×), `large` (1.25×), `x-large` (1.5×), `xx-large` (2×); normal size has no tag |
 | `{{font:Georgia}}text{{/font}}` | font family (name after the colon may contain spaces; a font name containing `}` is rejected); the default font has no tag. A device that lacks the font falls back to the pack font, then the system font |
 
