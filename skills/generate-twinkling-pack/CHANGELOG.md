@@ -12,6 +12,7 @@ All notable changes to Generate WinkNotes Pack are documented here.
 - Examples put clozes in the sentence to complete; explanations stay read aloud, only translations and side notes are muted.
 - Ships the App's dialect spec unchanged as `references/wink-spec-markdown-format.md`, copied at packaging time; `advanced-v2.md` is removed. SKILL.md keeps the workflow and points to spec sections.
 - The validator also checks known tag values, and the tests read the App's shared accept/reject samples.
+- The builder writes `generator: generate-twinkling-pack <version>` into each delivered header, so a later App can suggest updating an old Skill.
 
 ## 1.2.1 — 2026-07-30
 

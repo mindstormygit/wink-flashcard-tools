@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import unicodedata
 import zipfile
 from pathlib import Path, PurePosixPath
 
@@ -24,21 +25,53 @@ LEGACY = re.compile(
     r"|(?<!\\)\^[^\^\s]+\^"
 )
 PAIRED = {"cloze", "mute", "note", "ruby", "color", "u", "sup", "sub", "size", "font", "math"}
+# Inline formulas, read like the App: `$` + non-space, closing `$` after non-space and not before a digit; or {{math}}…{{/math}}.
+INLINE_MATH = re.compile(r"(?<!\\)\$(?=[^\s$])(?:\\.|[^$\\])*?(?<=\S)\$(?!\d)|\{\{math\}\}.*?\{\{/math\}\}")
+ATTRIBUTE_TAG = re.compile(r"\{\{(?:note|ruby|ruby64)=(?:\\.|[^}\\])*\}\}")
 TAG = re.compile(r"(?<!\\)\{\{(/?)([a-z0-9]+)(?:[:=](?:\\.|[^}\\])*)?\}\}")
 # A header exists only when the line after the first "---" starts with a known key (same rule as the App).
-HEADER_LINE = re.compile(r"^\s*(?:wink_md_version|pack_name|categories|fill_blanks)\s*:")
+HEADER_LINE = re.compile(r"^\s*(?:wink_md_version|pack_name|categories|fill_blanks|generator)\s*:")
 # Known tags whose value the App checks; a wrong value rejects the card (spec: Authoring tiers and tag tables).
 _HEX = r"#[0-9A-Fa-f]{6}"
 _CLOZE_PART = rf"(?:id=[A-Za-z0-9_-]{{1,64}}|color={_HEX})"
+_NUMBER = re.compile(r"[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?")
+
+
+def _attribute_text(value):
+    """Decode a note/ruby attribute: only \\n, \\\\ and \\} escapes are allowed (same as the App)."""
+    output, index = [], 0
+    while index < len(value):
+        if value[index] == "\\":
+            if index + 1 >= len(value) or value[index + 1] not in "n\\}":
+                return None
+            output.append("\n" if value[index + 1] == "n" else value[index + 1])
+            index += 2
+        else:
+            output.append(value[index])
+            index += 1
+    return "".join(output)
+
+
+def _valid_text(value, limit, allows_newline):
+    text = _attribute_text(value)
+    return (
+        text is not None and 1 <= len(text) <= limit and text == text.strip()
+        and not any(unicodedata.category(c) == "Cc" and not (allows_newline and c == "\n") for c in text)
+    )
+
+
 TAG_VALUES = {
     "color:": _HEX,
     "cloze:": rf"{_CLOZE_PART}(?:;{_CLOZE_PART})*",
     "size:": r"small|large|x-large|xx-large",
     "u:": r"solid|wavy|dashed|dotted",
     "font:": r".+",
-    "indent=": r"[0-9]|1[0-6]",
+    # Numbers parse like the App (Swift Int / Double): `01` and `5e-1` are fine; only the range matters.
+    "indent=": lambda value: re.fullmatch(r"[+-]?\d+", value) is not None and 0 <= int(value) <= 16,
     "align=": r"center|right",
-    "width=": lambda value: re.fullmatch(r"\d*\.?\d+", value) is not None and 0 < float(value) <= 1,
+    "width=": lambda value: _NUMBER.fullmatch(value) is not None and 0 < float(value) <= 1,
+    "note=": lambda value: _valid_text(value, 500, allows_newline=True),
+    "ruby=": lambda value: _valid_text(value, 100, allows_newline=False),
     "header=": r"none|row|column|both",
     "bg=": r"gray|red|yellow|pink|green|cyan|blue|purple|brown",
     "format=": r"number|percent|currency:[A-Z]{3}",
@@ -108,6 +141,8 @@ def parse(text):
         for match in TAG.finditer("\n".join(paragraph)):
             closing, name = match.group(1), match.group(2)
             inner = match.group(0)[2:-2]
+            if not closing and inner.startswith("ruby64="):
+                raise InputError(f"card {number}: do not write {{{{ruby64=…}}}}; write {{{{ruby=reading}}}} (spec: Authoring tiers)")
             for prefix, rule in TAG_VALUES.items():
                 if closing or not inner.startswith(prefix):
                     continue
@@ -198,9 +233,15 @@ def parse(text):
                     container.append("$$")
             elif container and stripped == container[-1]:
                 container.pop()
+        # Display formulas are raw LaTeX, like code: no legacy or tag checks inside.
+        if stripped == "$$" or (container and container[-1] == "$$"):
+            cards[-1].append(line)
+            at_card_start = False
+            continue
         visible = re.sub(r"(`+).*?\1", "", line)
-        visible = re.sub(r"(?<!\\)\$[^$]+\$", "", visible)
-        if LEGACY.search(visible):
+        visible = INLINE_MATH.sub("", visible)
+        # Note and ruby texts are plain attributes; legacy-looking text inside them is literal.
+        if LEGACY.search(ATTRIBUTE_TAG.sub("{{attr}}", visible)):
             raise InputError(f"card {number}: use dialect v2 only; rewrite legacy/Anki syntax and escape literal brackets as \\[ \\]")
         if stripped:
             paragraph.append(visible)

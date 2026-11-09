@@ -292,8 +292,8 @@ The brackets hold the title: up to 50 characters, no line breaks, no leading or 
 spaces; write `![录音](att:…)` or `![](att:…)` for no title. An audio bar may stand at the top
 level, inside a list item (not as its first block), a choice prompt, a table cell (written the
 same way) or a collapsible block; inside a `>` quote it is moved out like a table. It may reference an existing card recording or a new exchange file. New audio must be playable,
-use m4a/m4b/wav/mp3, and be at most 10 MiB. Each occurrence is stored as an independent attachment,
-even when the same source is referenced repeatedly.
+use m4a/m4b/wav/mp3, and be at most 10 MiB. A recording is used by exactly one audio bar;
+repeated references are handled as described under **Writing** below.
 Recordings that older cards kept outside the text show up in `get_card` as audio bars at the end
 of their side.
 
@@ -306,9 +306,13 @@ of their side.
   "keep/move this image"; images and recordings no longer referenced are deleted. For new files, copy an image or recording the client can read to
   `~/Downloads/闪卡交换/image.png` and write `![图片](att:image.png)`. Create the directory if
   needed; one subdirectory level is allowed (`att:task-1/image.png`). Use safe filenames (ASCII,
-  no spaces). No preparation tool or task registration is required. Existing images, rich images, recordings and exchange files may be referenced repeatedly.
-  Each occurrence in a submitted face is copied into a separate attachment; an omitted face stays unchanged. Any invalid reference
-  rejects the whole call before anything is written.
+  no spaces). No preparation tool or task registration is required. Existing images, rich images, recordings and exchange files may be referenced repeatedly:
+  - **New file** from the exchange directory: every occurrence becomes its own attachment.
+  - **Existing attachment, first occurrence** in the submitted faces: it keeps the attachment and its id. `<uuid>` and `<uuid>.<ext>` count as the same attachment.
+  - **Existing attachment, each later occurrence**: a copy with a new id.
+  - **Recording still used by an omitted face**: every occurrence in the submitted face is a copy, because one recording serves one audio bar.
+
+  An omitted face stays unchanged. Any invalid reference rejects the whole call before anything is written.
 - Example single note:
   `{"pack_uuid":"<pack UUID>","items":[{"type":"note","front":"![图片](att:image.png)","back":""}]}`.
   Both `front` and `back` are required for a new note; either may be empty.
@@ -367,8 +371,8 @@ pack_name: 心脏结构
 ### Header
 
 - The header is optional. It is present only when the first line is `---` and the second
-  line starts with one of the keys below (`wink_md_version:`, `pack_name:`, `categories:` or
-  `fill_blanks:`), so a body may begin with a divider followed by any other line.
+  line starts with one of the keys below (`wink_md_version:`, `pack_name:`, `categories:`,
+  `fill_blanks:` or `generator:`), so a body may begin with a divider followed by any other line.
 - One `key: value` per line, then a closing `---`. A string may be written bare or as a JSON
   double-quoted string; arrays are JSON. This is not YAML. A repeated key is an error; an
   unknown key is ignored.
@@ -379,6 +383,7 @@ pack_name: 心脏结构
 | `pack_name` | Pre-fills the name when the user imports into a new pack; defaults to the file name; must not be blank. Importing into an existing pack never renames it. |
 | `categories` | Optional JSON array such as `[{"path":["医学"],"color":"#29B6F6"},{"path":["医学","循环系统"],"color":"#13C25C"}]`. It sets the color of categories this import creates. Existing categories keep their color. Paths must be non-empty and unique; colors are `#RRGGBB`. Declare only paths the cards use. |
 | `fill_blanks` | `true` (type the cloze answer) or `false` (reveal it). Applies only when the import creates a new pack; omitted means the app default. An existing pack keeps its preference. |
+| `generator` | The tool and version that wrote the file, for example `generate-twinkling-pack 2.0.0`. Tools write it; authors do not. The app does not act on it yet; a later version may use it to suggest updating an old tool. |
 
 ### Cards and sides
 
@@ -407,7 +412,8 @@ A card may begin its front with one top-level comment holding a JSON object:
   `[]` means uncategorized; a card never inherits the previous card's category. Each name has
   1–200 characters, no line break, is not blank and does not contain `/$-#-$/`; at most 32 levels.
 - `starred` is a boolean; omitted means `false`.
-- A wrong type, a second meta comment or a missing `-->` is an error. Unknown fields are
+- A wrong type, a second meta comment or a missing `-->` is an error. A top-level meta comment
+  anywhere other than the start of the front (after body text, or on the back) counts as a second one. Unknown fields are
   ignored. The comment is not shown on the card. Do not write category ids.
 
 ### Attachments and ZIP

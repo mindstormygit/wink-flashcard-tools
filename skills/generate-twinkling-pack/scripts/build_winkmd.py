@@ -3,10 +3,23 @@
 from __future__ import annotations
 
 import argparse
-import shutil
 import zipfile
 from pathlib import Path
-from validate_winkmd import InputError, validate
+from validate_winkmd import HEADER_LINE, InputError, validate
+
+# Written into every delivered header so a later App can suggest updating an old Skill.
+# Keep in step with the top version in this Skill's CHANGELOG.md (a test checks it).
+GENERATOR = "generate-twinkling-pack 2.0.0"
+
+
+def stamp(text):
+    """Return the manuscript with `generator: GENERATOR` in its header, adding a header if there is none."""
+    lines = text.lstrip("﻿").replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    if lines[0] == "---" and len(lines) > 1 and HEADER_LINE.match(lines[1]):
+        end = lines.index("---", 1)
+        header = [line for line in lines[1:end] if line.split(":", 1)[0].strip() != "generator"]
+        return "\n".join(["---", *header, f"generator: {GENERATOR}", *lines[end:]])
+    return f"---\nwink_md_version: 2\ngenerator: {GENERATOR}\n---\n\n" + "\n".join(lines)
 
 
 def build(source, output, media=None):
@@ -18,6 +31,7 @@ def build(source, output, media=None):
     expected = ".zip" if references else ".winkmd"
     if output.suffix.lower() != expected:
         raise InputError(f"use {expected} for this manuscript")
+    manuscript = stamp(source.read_text(encoding="utf-8")).encode("utf-8")
     output.parent.mkdir(parents=True, exist_ok=True)
     # Exclusive creation protects previous deliverables, including a source passed as output.
     with output.open("xb") as stream:
@@ -25,12 +39,11 @@ def build(source, output, media=None):
             if references:
                 root = Path(media) if media else source.parent / "media"
                 with zipfile.ZipFile(stream, "w", zipfile.ZIP_DEFLATED) as archive:
-                    archive.write(source, source.name)
+                    archive.writestr(source.name, manuscript)
                     for ref in references:
                         archive.write(root / ref, "media/" + ref)
             else:
-                with source.open("rb") as manuscript:
-                    shutil.copyfileobj(manuscript, stream)
+                stream.write(manuscript)
         except BaseException:
             output.unlink(missing_ok=True)
             raise

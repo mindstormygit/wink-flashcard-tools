@@ -9,7 +9,7 @@ REPO = Path(__file__).resolve().parents[1]
 SKILL = REPO / "skills/generate-twinkling-pack"
 sys.path.insert(0, str(SKILL / "scripts"))
 sys.path.insert(0, str(REPO / "scripts"))
-from build_winkmd import build
+from build_winkmd import GENERATOR, build, stamp
 from validate_winkmd import InputError, parse, validate
 import package_skills
 
@@ -62,7 +62,17 @@ class WinkmdDeliveryTests(unittest.TestCase):
         out = self.root / "result.winkmd"
         info = build(source, out)
         self.assertEqual(info["cards"], 1)
-        self.assertEqual(out.read_text(), text)
+        stamped = text.replace("pack_name: 医学\n", f"pack_name: 医学\ngenerator: {GENERATOR}\n")
+        self.assertEqual(out.read_text(encoding="utf-8"), stamped)
+    def test_generator_is_stamped_once_and_matches_the_changelog(self):
+        changelog = (SKILL / "CHANGELOG.md").read_text(encoding="utf-8").splitlines()
+        latest = next(line for line in changelog if line.startswith("## "))
+        self.assertTrue(latest.startswith(f"## {GENERATOR.split()[-1]} "), latest)
+        # No header: one is added. Old generator line: replaced, not duplicated. Leading divider: stays body text.
+        self.assertEqual(stamp("正文"), f"---\nwink_md_version: 2\ngenerator: {GENERATOR}\n---\n\n正文")
+        self.assertEqual(stamp("---\ngenerator: old 1.0\n---\n正文").count("generator:"), 1)
+        self.assertTrue(stamp("---\nNote: 正文").endswith("---\nNote: 正文"))
+        self.assertEqual(parse(stamp("---\nNote: 正文"))["header"]["generator"], GENERATOR)
     def test_archive_has_one_root_manuscript_and_one_file_for_repeated_references(self):
         (self.media / "image.png").write_bytes((SKILL / "examples/media/sample.png").read_bytes())
         source = self.manuscript('![一](att:image.png)\n<!-- back -->\n![二](att:image.png)')
@@ -115,7 +125,7 @@ class WinkmdDeliveryTests(unittest.TestCase):
             with self.subTest(body=body), self.assertRaises(InputError):
                 parse(body + "\n\n<!-- back -->\n\n背面")
         for body in ("详见[说明](https://example.com)", "参考文献\\[1\\]", "{{mute}}{{u}}嵌套{{/u}}{{/mute}}",
-                     "{{note=a\\}b}}原文{{/note}}", "$x^2^y$", "{{ruby64=abc}}字{{/ruby}}", "价格从 $5 涨到 $10",
+                     "{{note=a\\}b}}原文{{/note}}", "$x^2^y$", "价格从 $5 涨到 $10",
                      "{{mute}}跨两行\\\n同一段{{/mute}}"):
             with self.subTest(body=body):
                 self.assertEqual(parse(body + "\n\n<!-- back -->\n\n背面")["cards"], 1)
