@@ -1,3 +1,7 @@
+# 2026-11-09: note Skill v2
+
+Note/choice authoring now uses `.winkmd` and media ZIPs, with hierarchy, stars, suggested pack names, colors and new-pack fill preference. Word Skill remains unchanged. Earlier releases retain legacy note builders.
+
 # Changelog
 
 This file records repository-wide releases. Component-specific changes are documented inside each Skill directory.

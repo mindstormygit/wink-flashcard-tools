@@ -2,93 +2,45 @@
 
 [English](README.md)
 
-本仓库开放用于生成 `.wink` 独立闪卡或闪卡包的 Skill、格式说明、生成器、校验器和示例。
+本仓库提供可独立安装的制卡 Skill、文稿说明、打包校验脚本和示例。闪卡 App 本体源码不在这里。
 
-目前包含两套可以独立安装的 AI 制卡 Skill：
-
-| Skill | 生成内容 | 主要能力 |
+| Skill | 交付内容 | 能力 |
 | --- | --- | --- |
-| [`generate-twinkling-pack`](skills/generate-twinkling-pack/) | 独立正反面笔记卡、单选题、多选题，或混合卡包 | 富文本、层级 Tag、普通图片，以及笔记卡原生矩形图片挖空 |
-| [`generate-twinkling-word-pack`](skills/generate-twinkling-word-pack/) | “闪卡”App 原生独立单词卡或单词卡包 | 支持英语、日语、韩语、德语、法语、西班牙语、葡萄牙语和意大利语，可生成读音、中文释义、例句、语言字段和 Tag |
+| [`generate-twinkling-pack`](skills/generate-twinkling-pack/) | 多卡 `.winkmd`；有附件则 ZIP | 问答、挖空、选择题、层级分类、星标、折叠提示、跳过朗读、普通图片和录音 |
+| [`generate-twinkling-word-pack`](skills/generate-twinkling-word-pack/) | 旧格式 `.wink` 单词卡或卡包 | 原生单词模板、读音、释义、例句与分类；本次不变 |
 
-两套 Skill 都使用 Python 3 在本地生成未加密的 `.wink` 文件，并在交付前自动校验。明确要求独立卡片或卡包时，以用户指定为准；没有指定时，最终只有 1 张就导出独立卡片，2 张及以上导出卡包。闪卡 App 本体源码不在本仓库的开源范围内。
+新版笔记 Skill 需要支持 `.winkmd` 导入的闪卡版本。旧 `.wink` 仍能导入 App；旧 Skill 版本保留在已有发布中。新版新建卡只交付普通图片，改已有文稿时可以保留其 `.rimg`，不再制作新的图片挖空。
 
-## 最简单的安装方法
+## 安装与使用
 
-1. 从 [Releases](https://github.com/mindstormygit/wink-flashcard-tools/releases) 下载需要的 Skill 压缩包；
-2. 在支持 Skills 的 AI 工具中打开对话；
-3. 对 AI 说“请帮我安装这个 Skill”，然后上传压缩包或粘贴下载地址；
-4. 安装完成后新建任务，让 AI 重新发现 Skill。
-
-手动安装时必须保留完整目录，不能只复制 `SKILL.md`。Codex 默认位置为：
+从 [Releases](https://github.com/mindstormygit/wink-flashcard-tools/releases) 下载需要的 Skill ZIP，解压完整目录到 AI 工具的 Skills 目录。Codex 默认位置为 `~/.codex/skills/generate-twinkling-pack/` 或 `~/.codex/skills/generate-twinkling-word-pack/`。不要只复制 SKILL.md；更新后新建会话以重新发现 Skill。
 
 ```text
-~/.codex/skills/generate-twinkling-pack/
-~/.codex/skills/generate-twinkling-word-pack/
+使用 $generate-twinkling-pack，把这份 PDF 制成约 40 张闪卡。
+按目录建立层级分类，重要卡加星；翻译跳过朗读，提示默认折叠。
+生成并校验 .winkmd，有图片或录音则交付 ZIP。
 ```
 
-其他 AI 工具的安装目录可能不同，请以对应工具的说明为准。
-
-## 笔记卡和选择题用法
+`category: ["医学","循环系统"]` 表示“医学 → 循环系统”这一条路径，每卡归最末一级。导入时可选已有普通包或新建包，无分类的卡保留在无分类。卡包名只预填新包名称；分类颜色只用于新建分类，填空偏好只用于新建卡包，不改已有设置。
 
 ```text
-使用 $generate-twinkling-pack，把这份 PDF 制作成 30 张笔记卡、
-10 道单选题和 5 道多选题。按目录建立 Tag，每张卡只考查一个知识点，
-选择题给出可信的干扰项和简短解析，最后生成并校验 .wink 卡包。
+使用 $generate-twinkling-word-pack，从这份英语资料挑选 40 个重要词汇，
+根据原文写读音、中文释义、例句和翻译，生成并校验 .wink 单词卡包。
 ```
 
-## 单词卡用法
+纯文字 `.winkmd` 可从“文件”App 直接用闪卡打开。带 `media/` 的普通 ZIP 从闪卡内“导入闪卡文件”选择。流程见[笔记 Skill](skills/generate-twinkling-pack/SKILL.md)，写法以[方言规范](skills/generate-twinkling-pack/references/wink-spec-markdown-format.md)为准。规范在打包时从闪卡 App 仓库原样复制，只在 App 仓库修改。Python 脚本只用标准库；校验封装、附件和 App 严格导入会拒收的写法，App 负责完整正文语义。
 
-```text
-使用 $generate-twinkling-word-pack 分析这份英语资料，
-挑选约 40 个值得学习的单词或固定搭配。
-根据原文语境编写简洁的中文释义，每个词添加一个自然例句和翻译，
-按小节建立 Tag，最后生成并校验 .wink 单词卡包。
-```
-
-## 独立卡片用法
-
-```text
-使用 $generate-twinkling-pack，把下面的知识点制作成一张 .wink 独立卡片，
-不要生成卡包。完成后校验文件。
-```
-
-独立卡片导入时由用户选择目标卡包，因此不包含卡包名和 Tag。多张卡片仍应生成卡包。
-
-“把这个 PDF 生成闪卡”这类说法没有指定容器，Skill 会按最终数量决定：1 张导出独立卡片，2 张及以上导出卡包。明确要求卡包时，即使最终只有 1 张也仍然导出卡包。
-
-## 图片挖空
-
-`generate-twinkling-pack` 支持在笔记卡中生成“闪卡”App 原生矩形 `.rimg` 图片挖空。这属于进阶能力，需要能够理解图片的多模态模型。当前选择题为纯文字，图片和图片挖空用于笔记卡。
-
-## “闪卡”格式
-
-先阅读 [“闪卡”格式索引](docs/wink-format.md)。两套 Skill 可以独立分发，因此完整格式细节保存在各自目录中：
-
-- [笔记卡与选择题格式](skills/generate-twinkling-pack/references/wink-format.md)
-- [单词卡格式](skills/generate-twinkling-word-pack/references/wink-format.md)
-
-## 生成发布压缩包
+## 发布包与检查
 
 ```bash
-python3 scripts/package_skills.py
+python3 -m unittest discover -s tests -v
+python3 scripts/package_skills.py --app-repo ../iOS/TwinklingCard
 ```
 
-命令会在 `dist/` 中生成两套可分发 ZIP。推送匹配 `v*` 的 Git 标签时，GitHub Actions 会校验示例，并把两个压缩包和校验值发布到 GitHub Releases。
+打包先从 App 仓库（`--app-repo` 或环境变量 `WINK_APP_REPO`）复制方言规范和拒收／接受样例，再在 `dist/` 生成两套可独立分发的 ZIP。推送发布标签会触发现有 GitHub Actions；本地打包不发布。
 
-## 安全和内容质量
+AI 生成内容需要结合原资料核对，只处理有权使用的材料。网页、OCR、模型推理和媒体获取由用户选择的 AI 环境提供；打包、校验在本地完成。
 
-- 打包与校验脚本在本地运行；
-- PDF 提取、OCR、网页读取和模型推理由用户选择的 AI 环境提供；
-- `.wink` 文件未加密，请勿公开含有隐私或敏感内容的卡包；
-- AI 生成内容可能出错，重要知识应结合原资料核对；
-- 只处理和分发自己有权使用的资料与图片。
+[闪卡官网](https://card.detailsoft.cn/) · [App Store](https://apps.apple.com/cn/app/id1515687192) · [格式索引](docs/wink-format.md)
 
-## 闪卡 App
-
-- [闪卡官网](https://card.detailsoft.cn/)
-- [App Store 下载](https://apps.apple.com/cn/app/id1515687192)
-
-## 许可证
-
-MIT License，详见 [LICENSE](LICENSE)。
+MIT License，见 [LICENSE](LICENSE)。

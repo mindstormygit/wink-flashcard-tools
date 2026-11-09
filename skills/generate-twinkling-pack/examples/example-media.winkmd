@@ -1,0 +1,19 @@
+---
+wink_md_version: 2
+pack_name: 附件示例
+---
+<!-- meta
+{"category":["导入示例","附件"]}
+-->
+图片与录音交付检查。
+
+![示例图片](att:sample.png)
+
+![测试录音](att:silence.wav)
+
+<!-- back -->
+同一文件的第二次引用会独立存储。
+
+![示例图片](att:sample.png)
+
+![测试录音](att:silence.wav)

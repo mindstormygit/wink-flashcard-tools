@@ -36,26 +36,22 @@
 
 ## Formatting
 
-- Use a plain string when formatting adds no learning value.
+- Use plain text when formatting adds no learning value.
 - Use bold for a term, condition, or conclusion that deserves visual emphasis.
-- Use highlight only for content intentionally treated as mark-pen/occlusion material by WinkNotes.
+- Use `{{cloze}}` only for the words the learner should recall; WinkNotes covers them until revealed.
 - Use text color sparingly to distinguish categories, warnings, or contrasted concepts.
 - Use underline and strikethrough only when their conventional meaning is clear.
 - Use super/subscript for compact scientific or mathematical notation.
 - Use links only for genuinely useful source or reference destinations.
 - Do not style an entire card by default; style the smallest meaningful phrase.
-- Do not put Markdown or HTML in `text`; formatting fields are the source of truth.
-- Rewrite essential table content into self-contained sentences.
+- Write dialect-v2 Markdown directly; use mute for translations/notes and collapsed details for hints.
+- Use a small table when its row/column relationships are the learning objective.
 
 ## Images
 
 - Include an image only when recognizing a diagram, structure, spatial relationship, visual distinction, or labeled component is part of the learning goal.
 - Prefer a focused crop or one clear diagram over a decorative screenshot of an entire page.
-- For an image-label recall task, use a native `richImage` occlusion rather than drawing a colored rectangle into a PNG.
-- Place each rectangular mask tightly over one meaningful label or feature. Split unrelated targets into separate masks, and avoid one large mask that hides contextual landmarks needed to answer.
-- Always embed the clean original image in the RichImage. Never use an already masked screenshot as the source.
-- Use normalized top-left coordinates and inspect the crop before authoring masks; coordinates from the uncropped PDF page must be translated to the final image.
-- Put a concise answer list on the reverse when the hidden labels are not self-evident after reveal.
+- New cards use ordinary images. Preserve supplied `.rimg` when revising a manuscript; do not create new image occlusion or bake masks into an image.
 - Keep the question answerable: state what the learner should inspect instead of relying on “the image above.”
 - Put a short caption, orientation cue, or source note in adjacent text when it prevents ambiguity.
 - Preserve labels and resolution needed to answer the question; do not use an unreadably small image.

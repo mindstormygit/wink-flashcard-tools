@@ -2,95 +2,46 @@
 
 [简体中文](README.zh-CN.md)
 
-Open Skills, format references, builders, validators, and examples for generating importable `.wink` standalone flashcards or flashcard packs for WinkNotes.
+Independently installable Skills, examples, format guidance and local packaging tools for WinkNotes. The App's private source is not part of this repository.
 
-This repository contains the complete source of two independent AI-agent Skills:
-
-| Skill | Generates | Highlights |
+| Skill | Output | Capabilities |
 | --- | --- | --- |
-| [`generate-twinkling-pack`](skills/generate-twinkling-pack/) | Standalone front/back note or choice cards, or mixed packs | Rich text, hierarchical tags, inline images, and native rectangular image occlusion on note cards |
-| [`generate-twinkling-word-pack`](skills/generate-twinkling-word-pack/) | Standalone native vocabulary cards or vocabulary packs | English, Japanese, Korean, German, French, Spanish, Portuguese, and Italian; pronunciation, Chinese definitions, examples, language-specific fields, and tags |
+| [`generate-twinkling-pack`](skills/generate-twinkling-pack/) | Multi-card `.winkmd`, or ZIP with media | Recall and choice questions, cloze, hierarchical categories, stars, collapsed hints, muted translations/notes, pictures and recordings |
+| [`generate-twinkling-word-pack`](skills/generate-twinkling-word-pack/) | Legacy `.wink` word cards or packs | Native word templates, pronunciation, definitions, examples and categories; unchanged |
 
-Both Skills generate unencrypted `.wink` files locally with Python 3 and validate every completed artifact before delivery. Explicit standalone-card or pack requests take priority. When the product is unspecified, one final card becomes a standalone card and two or more become a pack. The WinkNotes source code is not part of this repository.
+The new note Skill requires a WinkNotes version supporting `.winkmd` import. The App continues importing legacy `.wink`; earlier Skill releases retain the old builder. New cards use ordinary pictures. Existing `.rimg` attachments can be carried back unchanged; the new Skill does not create image occlusions.
 
-## Quick start
+## Install and use
 
-1. Download a Skill archive from [Releases](https://github.com/mindstormygit/wink-flashcard-tools/releases), or clone this repository.
-2. Install the complete Skill directory in the Skills location used by your AI tool. Do not copy only `SKILL.md`.
-3. Start a new task so the tool can discover the Skill.
-4. Attach your source material and use one of the prompts below.
-
-Codex default locations:
+Download a Skill ZIP from [Releases](https://github.com/mindstormygit/wink-flashcard-tools/releases), then unpack the complete folder into your AI tool's Skills directory. Codex defaults to `~/.codex/skills/generate-twinkling-pack/` and `~/.codex/skills/generate-twinkling-word-pack/`. Keep scripts and references, not just SKILL.md. Start a new conversation after updating for fresh discovery.
 
 ```text
-~/.codex/skills/generate-twinkling-pack/
-~/.codex/skills/generate-twinkling-word-pack/
+Use $generate-twinkling-pack to turn this PDF into about 40 flashcards.
+Use chapter-based hierarchical categories and star important cards.
+Mute translations and notes, collapse hints, and deliver validated .winkmd,
+or a ZIP when images or recordings are included.
 ```
 
-Other AI tools may use a different location. Follow the tool's own Skill installation instructions.
-
-### Notes and choice cards
+A category array is one parent-to-child path, not several independent tags. Import lets the user choose or create a normal pack. Unclassified cards remain unclassified. A pack name only suggests a new name; existing names, category colors and study preferences are preserved.
 
 ```text
-Use $generate-twinkling-pack to turn this PDF into 30 note cards,
-10 single-answer questions, and 5 multiple-answer questions.
-Create tags from the document outline, keep each card atomic,
-add a short explanation to every choice question,
-then build and validate the .wink pack.
+Use $generate-twinkling-word-pack to select 40 useful words from this source,
+write source-grounded definitions and examples, and deliver a validated .wink word pack.
 ```
 
-### Word cards
+Open plain `.winkmd` in WinkNotes from Files. Select ordinary ZIPs through WinkNotes' in-app file import. See the [note Skill](skills/generate-twinkling-pack/SKILL.md) for the workflow and the [dialect spec](skills/generate-twinkling-pack/references/wink-spec-markdown-format.md) for syntax. The spec is copied from the WinkNotes App repository when packaging; edit it there, not here. Python helpers use only the standard library; they check delivery envelopes, attachments and the App's strict v2 rejections, while the App validates full dialect semantics.
 
-```text
-Use $generate-twinkling-word-pack to select about 40 useful English
-words or phrases from this document. Add concise Chinese definitions,
-one natural example with translation, and section-based tags,
-then build and validate the .wink vocabulary pack.
-```
-
-### Standalone card
-
-```text
-Use $generate-twinkling-pack to turn the following fact into one standalone
-.wink card, not a pack, then validate the file.
-```
-
-WinkNotes asks the user to choose a destination pack when importing a standalone card, so standalone cards do not contain a pack name or tag. Use a pack for multiple cards.
-
-Generic requests such as "make flashcards from this PDF" use the final card count: one card exports as a standalone card; two or more export as a pack. Explicitly requesting a pack still creates a pack when it contains only one card.
-
-## Image occlusion
-
-`generate-twinkling-pack` can create native rectangular `.rimg` image occlusions on note cards. This advanced workflow requires a multimodal model that can understand the source image. Choice cards are text-only in the current version.
-
-## WinkNotes format
-
-Start with the [WinkNotes format index](docs/wink-format.md). Detailed serializer references live with each independently distributable Skill:
-
-- [Note and choice pack format](skills/generate-twinkling-pack/references/wink-format.md)
-- [Word pack format](skills/generate-twinkling-word-pack/references/wink-format.md)
-
-## Build release archives
+## Check and package
 
 ```bash
-python3 scripts/package_skills.py
+python3 -m unittest discover -s tests -v
+python3 scripts/package_skills.py --app-repo ../iOS/TwinklingCard
 ```
 
-The command creates two reproducible ZIP archives in `dist/`. Git tags matching `v*` trigger the release workflow, which validates the examples and attaches both archives with checksums to a GitHub Release.
+Packaging first copies the dialect spec and its accept/reject samples from the App checkout (`--app-repo`, or `WINK_APP_REPO`). The `dist/` directory receives independently distributable archives for both Skills. Local packaging does not publish; explicit release tags use the existing GitHub workflow.
 
-## Safety and content quality
+Use source material you are authorized to process. Check AI-authored learning content against the source. OCR, web access, media acquisition and model inference are supplied by the chosen AI environment; packaging runs locally.
 
-- Packaging and validation scripts run locally.
-- Source extraction, OCR, webpage access, and model inference are provided by the AI environment the user selects.
-- `.wink` files are unencrypted. Do not publish packs containing private or sensitive material.
-- AI-generated study content can be wrong. Verify important facts against the original source.
-- Use only source material and images you are allowed to process and distribute.
+[Website](https://card.detailsoft.cn/) · [App Store](https://apps.apple.com/cn/app/id1515687192) · [Format index](docs/wink-format.md)
 
-## App
-
-- [WinkNotes website](https://card.detailsoft.cn/)
-- [WinkNotes on the App Store](https://apps.apple.com/cn/app/id1515687192)
-
-## License
-
-MIT License. See [LICENSE](LICENSE).
+MIT License; see [LICENSE](LICENSE).

@@ -1,4 +1,4 @@
 interface:
   display_name: "Generate WinkNotes Cards"
-  short_description: "Build note or choice .wink cards and packs"
-  default_prompt: "Use $generate-twinkling-pack to turn this PDF or source material into importable .wink flashcards. Honor an explicitly requested standalone card or pack; otherwise export one final card as a standalone card and two or more as a pack. Use recall-oriented note cards or useful single- or multiple-answer choice cards, plus pack-level tags, rich text, inline images, and native image occlusions where appropriate."
+  short_description: "Write v2 winkmd cards with categories and media"
+  default_prompt: "Use $generate-twinkling-pack to turn this source into source-grounded .winkmd flashcards. Include useful recall and choice questions, hierarchical categories and optional stars. Put translations and notes inside mute tags and hints in collapsed details. Deliver a validated .winkmd file, or a ZIP with media when needed."

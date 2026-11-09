@@ -1,0 +1,43 @@
+---
+wink_md_version: 2
+pack_name: 循环系统
+categories: [{"path":["生物","循环系统"],"color":"#13C25C"}]
+fill_blanks: true
+---
+
+<!-- meta
+{"category":["生物","循环系统"],"starred":true}
+-->
+左心室把血液泵入{{cloze}}主动脉{{/cloze}}，送往全身。
+
+<!-- back -->
+主动脉是体循环的起点。
+
+{{mute}}备注：连接左心室与体循环。{{/mute}}
+
+<!-- card -->
+
+<!-- meta
+{"category":["生物","循环系统"]}
+-->
+:::choice
+哪条血管接收右心室的血液？
+- [ ] 主动脉
+- [x] 肺动脉
+:::
+
+<!-- back -->
+解析：右心室经肺动脉将血液泵向肺。
+
+<!-- card -->
+什么叫体循环？
+
+<details>
+<summary>提示</summary>
+
+从左心室出发，回到右心房。
+
+</details>
+
+<!-- back -->
+左心室 → 主动脉 → 全身组织 → 腔静脉 → 右心房。

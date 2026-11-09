@@ -2,6 +2,17 @@
 
 All notable changes to Generate WinkNotes Pack are documented here.
 
+## 2.0.0 — 2026-11-09
+
+- Authors dialect-v2 `.winkmd` instead of legacy document JSON; ZIP includes media only when needed.
+- Supports multi-card files, hierarchical categories and colors, stars, suggested pack names and new-pack fill preference.
+- Adds mute for translations/notes and collapsed hints; supports ordinary images, recordings and carrying back existing `.rimg`.
+- New-card image occlusion is no longer authored. Legacy `.wink` output remains available from earlier Skill releases; the App still imports it.
+- Uses a small standard-library builder and envelope validator; full rich-document semantics are checked by the App. The validator also rejects what the App's strict import rejects: legacy/Anki syntax, unescaped brackets after CJK text, caret superscripts, and unclosed or misordered tags.
+- Examples put clozes in the sentence to complete; explanations stay read aloud, only translations and side notes are muted.
+- Ships the App's dialect spec unchanged as `references/wink-spec-markdown-format.md`, copied at packaging time; `advanced-v2.md` is removed. SKILL.md keeps the workflow and points to spec sections.
+- The validator also checks known tag values, and the tests read the App's shared accept/reject samples.
+
 ## 1.2.1 — 2026-07-30
 
 - Aligns the Chinese product name with “闪卡” and the English product name with WinkNotes.

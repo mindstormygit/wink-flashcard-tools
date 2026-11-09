@@ -1,78 +1,82 @@
 ---
 name: generate-twinkling-pack
-description: Generate importable, unencrypted WinkNotes .wink standalone flashcards or flashcard packs from PDFs, documents, notes, images, webpages, or other source material. Use when an agent needs to create one front/back NoteLegacyDocument or ChoiceDocument card for import into an existing pack, or a mixed pack of note and single- or multiple-answer choice cards, with optional pack-level hierarchical tags, rich-text formatting, ordinary inline images, or native RichImage image-occlusion attachments. Also use when a user asks what this skill can do, how to install, share, or use it, or requests example prompts or troubleshooting. This version excludes word cards, media inside choice cards, freehand rich-image drawings, audio, and other attachment types.
+description: Create source-grounded WinkNotes note and choice flashcards as dialect-v2 .winkmd manuscripts or ZIPs with images and audio. Use for offline flashcard authoring from notes, PDFs, images or webpages, and for help with this Skill. Word cards use the separate word-card Skill; editing cards already in the App uses MCP.
 ---
 
-# Generate WinkNotes Cards and Packs
+# Generate WinkNotes Flashcards
 
-Create either one standalone card for import into an existing pack or a source-grounded pack of recall and recognition cards. Choose front/back notes or single-/multiple-answer choices according to the learning objective. Packs may use a compact tag taxonomy; both products support restrained rich-text formatting, useful inline images, and native image occlusions where the card type permits them. Use the bundled scripts to serialize and validate the `.wink` artifact. Never hand-author `content.json`, `.rimg` property lists, internal tag paths, span offsets, attachment IDs, style bitmasks, or Base64 `rtf` values.
+Write one or many recall cards directly in `.winkmd`; include ordinary pictures or recordings in a ZIP when needed. Requires the WinkNotes version with `.winkmd` import. Older `.wink` files remain readable by the App, but this Skill now authors v2 manuscripts.
 
-## Help and Onboarding
+Read the source, then [card-authoring-guidelines.md](references/card-authoring-guidelines.md). Cover the useful learning objectives, honor requested counts, and keep each card answerable by itself. Choose recall questions by default and choice blocks when distinguishing alternatives is the learning objective. Do not invent facts missing from the source.
 
-When the user asks how to install or use this skill, what inputs it accepts, what it can generate, how to share it, or why it is not being discovered, read [user-guide.zh-CN.md](references/user-guide.zh-CN.md) and answer the help request before starting card or pack generation. Offer one or two copyable prompts tailored to the user's source. Do not require the user to understand the internal cards JSON or `.wink` format.
+All syntax is defined in [wink-spec-markdown-format.md](references/wink-spec-markdown-format.md), the App's dialect spec copied unchanged. Before writing, read its **Authoring tiers** and **Offline .winkmd files** sections. Look up another section (Tables, Pronunciation guides, Text annotations, Choice blocks, Escaping, Attachments) only when a card needs it. If this file and the spec disagree, follow the spec.
 
-## Workflow
+For installation or usage help, read [user-guide.zh-CN.md](references/user-guide.zh-CN.md). For requests to modify cards already in WinkNotes, use available MCP tools and their `get_markdown_help`; do not invent card UUIDs or replace a whole pack to edit a sentence.
 
-1. Determine the requested product.
-   - If the user explicitly requests a card pack, build a pack even when it contains one card.
-   - If the user explicitly requests one standalone `.wink` card, build a standalone card and require exactly one card.
-   - Treat generic wording such as "make flashcards from this PDF" as unspecified. After drafting, build a standalone card when the final count is one; build a pack when it is two or more.
-   - Standalone cards do not have a pack name or tags. WinkNotes asks the user to choose the destination pack during import.
-2. Read the source completely enough to identify its structure and central ideas.
-   - For a PDF, use an available PDF extraction or OCR capability first.
-   - Ignore repeated headers, footers, page numbers, and OCR noise.
-   - Extract or download only images that materially improve recall, and save them as local image files.
-3. Read [card-authoring-guidelines.md](references/card-authoring-guidelines.md), then draft atomic cards and select the card type that best tests each objective.
-   - Honor a requested card count.
-   - If no count is provided, cover the high-value material without mechanically converting every paragraph.
-   - Do not add facts that are not supported by the source.
-   - Prefer front/back note cards for free recall, explanation, images, and image occlusion.
-   - Use choice cards when distinguishing plausible alternatives is itself valuable; write credible distractors and an explanatory note.
-   - For a pack, add a small hierarchy of reusable tags when it improves navigation or focused review.
-4. Read [cards-input-schema.md](references/cards-input-schema.md). When the artifact contains a choice, also read [choice-cards.md](references/choice-cards.md). Then write the matching UTF-8 JSON input file.
-5. Resolve script paths relative to this `SKILL.md`, then build the selected product:
+## Author a manuscript
 
-   ```bash
-   # Unspecified product: one final card becomes a card; two or more become a pack
-   python3 <skill-dir>/scripts/build_wink.py <cards.json> <output.wink>
+```markdown
+---
+wink_md_version: 2
+pack_name: 循环系统
+---
 
-   # Explicit pack, including a one-card pack
-   python3 <skill-dir>/scripts/build_wink.py <cards.json> <output.wink> --product pack
+<!-- meta
+{"category": ["生物", "循环系统"], "starred": true}
+-->
 
-   # Explicit standalone card
-   python3 <skill-dir>/scripts/build_wink.py <card.json> <output.wink> --product card
-   ```
+左心室把血液泵入{{cloze}}主动脉{{/cloze}}，送往全身。
 
-6. Always validate the completed artifact:
+<!-- back -->
 
-   ```bash
-   python3 <skill-dir>/scripts/validate_wink.py <output.wink>
-   ```
+主动脉是体循环的起点。
 
-7. Deliver the validated `.wink` file and identify it as a standalone card or pack.
-   - For a standalone card, report its card type, choice-option count when applicable, total span count, image-attachment count, native RichImage count, and image-occlusion count.
-   - For a pack, also report its pack name, total card count, note-card count, choice-card count, single-/multiple-choice count, tag count, and tagged-card count.
+<!-- card -->
 
-## Constraints
+:::choice
+哪条血管接收右心室的血液？
+- [ ] 主动脉
+- [x] 肺动脉
+:::
 
-- Generate front/back `NoteLegacyDocument` cards and text-only `ChoiceDocument` cards as one standalone card or together in any order in a pack.
-- A standalone-card product contains exactly one root `CardVO`. It has no pack name or tag; WinkNotes assigns its destination pack and import tag during import.
-- A choice card must contain 2–26 unique options and at least one correct option. One correct option makes it single-choice; multiple correct options make it multiple-choice.
-- Choice questions, options, and explanations support text formatting described in the choice-card reference, but do not support `image` or `richImage` segments in this version.
-- In pack products, assign at most one tag to each card. Tags may form a hierarchy and are optional.
-- Reference tags by input ID; let the build script generate WinkNotes' internal hierarchical paths.
-- Support ordinary inline images and rectangular native image occlusions. Source images may be HEIC, PNG, JPEG/JPG, WebP, or TIFF.
-- Never simulate image occlusion by baking colored blocks into a PNG or by putting a masked image on the front and an unmasked image on the back. Use a `richImage` segment so WinkNotes receives one native `.rimg` attachment with interactive redaction objects.
-- Do not emit freehand rich-image drawings, ellipse/polygon occlusions, audio, video, or pasted Base64 attachment data.
-- Use local image paths in the input JSON. Relative paths resolve from the JSON file's directory; do not place remote URLs in `image` or `richImage.image`.
-- Limit each card side to at most 15 images.
-- Let the build script compute all UTF-16 span locations and lengths, attachment IDs, and media filenames.
-- Create an unencrypted ZIP with `content.json` first at its root and, when needed, image files under `media/`. `content.json` contains one root `CardVO` for a standalone card or one root `CardPackVO` for a pack.
-- Treat Markdown markers as literal text; express supported formatting through segment fields.
-- Use highlight deliberately: WinkNotes treats mark-pen highlighting as occlusion content during analysis.
-- Refuse to deliver an artifact when validation fails.
-- Do not overwrite an existing output file; choose a new path or obtain explicit permission first.
+<!-- back -->
 
-## Format Maintenance
+右心室经肺动脉把血液泵向肺。
+```
 
-Read [wink-format.md](references/wink-format.md) only when changing the serializer or investigating compatibility. Keep its version constants synchronized with the WinkNotes Codable models.
+- Write common forms. Use occasional forms only when the learning goal or the user asks for them, and never write the "do not write" tier (spec: Authoring tiers). Omit styling that has no learning purpose.
+- `category` is one parent-to-child path, not a list of tags; omit it for uncategorized cards. `pack_name` only pre-fills a new pack's name (spec: Offline .winkmd files).
+- Put a cloze inside the sentence the learner should complete, usually on the front. Do not wrap the back's answer in a cloze: the learner has already flipped to see it.
+- Put translations and side notes (such as `备注：…`) inside `{{mute}}…{{/mute}}`. Questions, answers, explanations and hints are learning content and are read aloud; do not mute them.
+- Put hints in a **collapsed** details block:
+
+  ```markdown
+  <details>
+  <summary>提示</summary>
+
+  从心室的出口考虑。
+
+  </details>
+  ```
+
+- Several checked options in a choice block mean several correct answers. Put explanations on the back, unmuted.
+- Escape literal punctuation with a backslash (spec: Escaping). Citation marks are the common case: write `参考文献\[1\]`, not `参考文献[1]`, which the App rejects. Close every `{{tag}}` in the same paragraph, in reverse opening order.
+
+## Attachments and delivery
+
+Write `![diagram](att:heart.png)` or `![原声](att:reading.m4a)` on its own line and put the file directly in `media/` (spec: Offline .winkmd files → Attachments and ZIP). Obtain files from the source or available tools; never fabricate media bytes. For new cards, deliver ordinary images. Do not generate `.rimg` occlusions or simulate them by baking masks into a picture. When revising an existing manuscript, keep supplied `.rimg` attachments unchanged.
+
+Use the bundled helper relative to this `SKILL.md`:
+
+```bash
+# No attachments: a plain, UTF-8 multi-card file
+python3 <skill-dir>/scripts/build_winkmd.py draft.winkmd output.winkmd
+
+# With attachments: exactly one manuscript at ZIP root, media/ next to it
+python3 <skill-dir>/scripts/build_winkmd.py draft.winkmd output.zip --media ./media
+
+python3 <skill-dir>/scripts/validate_winkmd.py output.winkmd
+python3 <skill-dir>/scripts/validate_winkmd.py output.zip
+```
+
+The validator checks packaging, metadata, attachments and the strict v2 rejections the App applies on import; the App checks the remaining document rules. Resolve missing media before delivery even though the App can recover missing pictures as placeholders and skip missing audio. Choose a new output path rather than overwriting an existing file. Deliver the file with its card count and category structure; explain that import lets the user choose or create a pack.

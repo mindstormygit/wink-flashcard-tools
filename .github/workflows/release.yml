@@ -17,12 +17,10 @@ jobs:
           python-version: "3.x"
       - name: Validate included examples
         run: |
-          python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
-            skills/generate-twinkling-pack/examples/example-pack.wink
-          python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
-            skills/generate-twinkling-pack/examples/example-mixed-pack.wink
-          python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
-            skills/generate-twinkling-pack/examples/example-card.wink
+          python3 -m unittest discover -s tests -v
+          python3 skills/generate-twinkling-pack/scripts/validate_winkmd.py skills/generate-twinkling-pack/examples/example-pack.winkmd
+          python3 skills/generate-twinkling-pack/scripts/validate_winkmd.py skills/generate-twinkling-pack/examples/example-card.winkmd
+          python3 skills/generate-twinkling-pack/scripts/validate_winkmd.py skills/generate-twinkling-pack/examples/example-media.zip
           python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \
             skills/generate-twinkling-word-pack/examples/example-word-pack.wink
           python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \

@@ -1,25 +1,11 @@
 # WinkNotes Format Index
 
-`.wink` is an importable, self-contained flashcard format used by WinkNotes. It can contain one standalone card or one card pack.
+New note/choice authoring uses dialect-v2 `.winkmd`: one UTF-8 manuscript can contain multiple front/back cards. With attachments, use an ordinary unencrypted ZIP containing one root manuscript and files directly under `media/`.
 
-## Container
+- [Authoring and delivery](../skills/generate-twinkling-pack/SKILL.md)
+- [Advanced v2 syntax and metadata](../skills/generate-twinkling-pack/references/advanced-v2.md)
+- [Examples](../skills/generate-twinkling-pack/examples/)
 
-- File extension: `.wink`
-- Container: unencrypted ZIP
-- Root document: UTF-8 `content.json` containing one `CardVO` or `CardPackVO`
-- Optional note-card media: files under `media/`
-- Current pack document version: `6`
+The App generates internal document trees and IDs. Do not author those payloads in the note Skill. Metadata supports suggested pack names, hierarchical categories and colors, stars and a new-pack fill preference. Every attachment occurrence is stored independently by the App.
 
-## Card document types
-
-| Type | Document | Current version | Detailed reference |
-| --- | --- | --- | --- |
-| `1` | `NoteLegacyDocument` | `3` | [Note and choice pack format](../skills/generate-twinkling-pack/references/wink-format.md) |
-| `2` | `ChoiceDocument` | `100` | [Note and choice pack format](../skills/generate-twinkling-pack/references/wink-format.md) |
-| `3` | `WordDocument` | `100` | [Word pack format](../skills/generate-twinkling-word-pack/references/wink-format.md) |
-
-## Why the detailed references live inside each Skill
-
-Every Skill release archive must be complete when downloaded by itself. Its builder, validator, input schema, format reference, and user guide therefore travel together inside the Skill directory.
-
-Do not create `content.json`, Base64 document payloads, tag paths, attachment IDs, or ZIP contents by hand. Use the bundled builders and always run the matching validator before delivering a card or pack.
+The independent [word Skill](../skills/generate-twinkling-word-pack/SKILL.md) continues generating legacy `.wink`: unencrypted ZIP, root `content.json`, native WordDocument type 3, document version 100, pack version 6. Its [format reference](../skills/generate-twinkling-word-pack/references/wink-format.md) remains inside that Skill so it can ship independently. The App still reads existing legacy note and choice archives.

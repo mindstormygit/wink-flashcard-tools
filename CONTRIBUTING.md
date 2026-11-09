@@ -1,34 +1,17 @@
 # Contributing
 
-Contributions that improve format accuracy, validation, documentation, examples, or card-authoring quality are welcome.
+Keep each Skill independently distributable. The note Skill authors `.winkmd` dialect v2; the word Skill continues to build legacy `.wink`. Do not include private user data, internal App source, credentials or copyrighted study materials.
 
-## Before opening a pull request
-
-1. Keep each Skill independently distributable. References required at runtime must remain inside that Skill directory.
-2. Do not hand-author Base64 document payloads or ZIP internals when a bundled builder can produce them.
-3. Add or update validation for every serializer change.
-4. Validate all included example packs.
-5. Do not include copyrighted study materials, private user data, credentials, or internal application source code.
-
-Run the local checks:
+Use supported v2 authoring syntax, not internal document trees, Base64 payloads or IDs. When changing delivery scripts, test packaging and validation and import the resulting manuscript in the App. The lightweight Python validator does not replace the App's rich-document validation.
 
 ```bash
-python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
-  skills/generate-twinkling-pack/examples/example-pack.wink
-
-python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
-  skills/generate-twinkling-pack/examples/example-mixed-pack.wink
-
-python3 skills/generate-twinkling-pack/scripts/validate_wink.py \
-  skills/generate-twinkling-pack/examples/example-card.wink
-
-python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \
-  skills/generate-twinkling-word-pack/examples/example-word-pack.wink
-
-python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \
-  skills/generate-twinkling-word-pack/examples/example-word-card.wink
-
+python3 -m unittest discover -s tests -v
+python3 skills/generate-twinkling-pack/scripts/validate_winkmd.py skills/generate-twinkling-pack/examples/example-pack.winkmd
+python3 skills/generate-twinkling-pack/scripts/validate_winkmd.py skills/generate-twinkling-pack/examples/example-card.winkmd
+python3 skills/generate-twinkling-pack/scripts/validate_winkmd.py skills/generate-twinkling-pack/examples/example-media.zip
+python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py skills/generate-twinkling-word-pack/examples/example-word-pack.wink
+python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py skills/generate-twinkling-word-pack/examples/example-word-card.wink
 python3 scripts/package_skills.py
 ```
 
-Format changes must remain compatible with the current WinkNotes Codable models and should include a clear changelog entry.
+Update examples and changelog when changing the format or authoring workflow. GitHub release publishing still requires an explicitly requested release/tag.

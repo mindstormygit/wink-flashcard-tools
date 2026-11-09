@@ -1,0 +1,39 @@
+{
+  "about": "Card-face bodies that a strict dialect-v2 reader (.winkmd import) must accept or reject. Companion to wink-spec-markdown-format.md. The app's WinkMarkdownFileTests and the Skill's validator tests both read this file; change it here, then rerun both.",
+  "wrap": "Each body becomes the front of a one-card manuscript: header, body, <!-- back -->, back text. headerless_files are whole manuscripts, read as is; each must parse as one card whose first lines are body text, not a header.",
+  "headerless_files": [
+    {"name": "divider then lowercase key-like text", "text": "---\nnote: 正文第一行\n\n<!-- back -->\n\n背面\n"},
+    {"name": "divider then URL", "text": "---\nhttps://example.com\n\n---\n\n<!-- back -->\n\n背面\n"},
+    {"name": "divider then capitalized text", "text": "---\nNote: 正文第一行\n\n<!-- back -->\n\n背面\n"}
+  ],
+  "must_reject": [
+    {"name": "Anki cloze", "body": "左心室把血液泵入{{c1::主动脉}}。"},
+    {"name": "v1 highlight", "body": "左心室把血液泵入==主动脉==。"},
+    {"name": "v1 bracket color", "body": "[主动脉]{color=#FF644E}"},
+    {"name": "v1 underline", "body": "<u>主动脉</u>"},
+    {"name": "caret superscript", "body": "x^2^ + y^2^"},
+    {"name": "Anki ruby after Han", "body": "漢字[かんじ]を読む。"},
+    {"name": "unescaped citation after Han", "body": "见参考文献[1]。"},
+    {"name": "tag left open", "body": "{{mute}}这句不读"},
+    {"name": "tags closed in the wrong order", "body": "{{color:#FF644E}}{{mute}}红色{{/color}}{{/mute}}"},
+    {"name": "known tag with invalid value", "body": "{{color:red}}红色{{/color}}"},
+    {"name": "choice block without closing line", "body": ":::choice\n哪条血管接收右心室的血液？\n- [ ] 主动脉\n- [x] 肺动脉"}
+  ],
+  "must_accept": [
+    {"name": "cloze in a sentence", "body": "左心室把血液泵入{{cloze}}主动脉{{/cloze}}，送往全身。"},
+    {"name": "escaped citation", "body": "见参考文献\\[1\\]。"},
+    {"name": "link right after Han", "body": "详见[官网](https://example.com)。"},
+    {"name": "inline formula with caret", "body": "面积为 $x^2$。"},
+    {"name": "escaped dollar amounts", "body": "价格从 \\$5 涨到 \\$10。"},
+    {"name": "legacy syntax inside inline code", "body": "旧写法 `==x==` 和 `{{c1::x}}` 不再使用。"},
+    {"name": "legacy syntax inside a code block", "body": "```\n{{c1::x}} ==y== x^2^\n```"},
+    {"name": "nested tags closed in reverse order", "body": "{{color:#FF644E}}{{mute}}红色{{/mute}}{{/color}}"},
+    {"name": "ruby and note", "body": "{{ruby=shōushi}}收拾{{/ruby}}房间，{{note=狐狸}}fox{{/note}}。"},
+    {"name": "translation muted", "body": "aorta {{mute}}（主动脉）{{/mute}}"},
+    {"name": "single tilde is literal", "body": "H~2~O"},
+    {"name": "unknown tag stays literal", "body": "{{unknown}}文字"},
+    {"name": "collapsed hint", "body": "问题\n\n<details>\n<summary>提示</summary>\n\n从心室的出口考虑。\n\n</details>"},
+    {"name": "choice block", "body": ":::choice\n哪条血管接收右心室的血液？\n- [ ] 主动脉\n- [x] 肺动脉\n:::"},
+    {"name": "table with markers", "body": "{{header=both}}{{stripes}}\n| 项目 | 数值 |\n| --- | ---: |\n| {{bg=yellow}}完成率 | {{format=percent}}25 |"}
+  ]
+}
