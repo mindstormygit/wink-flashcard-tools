@@ -146,6 +146,32 @@ class WinkmdDeliveryTests(unittest.TestCase):
         with self.assertRaises(InputError):
             parse("---\nwink_md_version: 2\npack_name: 未闭合")
 
+    def test_card_and_back_separators_after_code_and_math(self):
+        for marker in ("<!-- card -->", "<!-- back -->"):
+            for before, after in (
+                ("```code```", "second"),
+                ("$$\nx$$", "$$y\n$$"),
+                ("$$\nx$$", "$$\ny$$"),
+            ):
+                with self.subTest(before=before, marker=marker, after=after), self.assertRaises(InputError):
+                    parse(f"first\n{before}\n\n{marker}\n\n{after}")
+
+        for safe in ("`code`", "$$x$$", "$$\nx\n$$", "```\n<!-- card -->\n```"):
+            with self.subTest(safe=safe):
+                self.assertEqual(parse(f"{safe}\n\n<!-- back -->\nanswer\n\n<!-- card -->\nsecond")["cards"], 2)
+
+    def test_nested_choice_items(self):
+        for body in (
+            "1. prompt\n   - [x] nested",
+            "Q\n- [x] A\n  - child\n- [ ] B",
+            "Q\n- [x] A\n    1. child\n- [ ] B",
+        ):
+            with self.subTest(body=body), self.assertRaises(InputError):
+                parse(f":::choice\n{body}\n:::")
+        for prompt in ("1. step\n   - detail", "- step\n  1. detail"):
+            with self.subTest(prompt=prompt):
+                self.assertEqual(parse(f":::choice\n{prompt}\n\n- [x] A\n- [ ] B\n:::")["cards"], 1)
+
     def test_choice_header_attributes_and_inline_explanation(self):
         for body in (
             ":::choice{shuffle=false}\n哪项正确？\n- [ ] 甲\n- [x] 以上都是\n:::explanation\n解析内容。\n:::",

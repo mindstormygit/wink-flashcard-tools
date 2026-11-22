@@ -40,7 +40,7 @@ _DETAILS_OPENING = re.compile(
     re.IGNORECASE,
 )
 _CONTAINER_MARKERS = re.compile(r"^(?:(?:[-*+]|[0-9]+[.)]|>)[ \t]+)+")
-_UNORDERED_ITEM = re.compile(r"^([ ]{0,3})([-*+])([ \t]+)(.*)$")
+_CHOICE_LIST_ITEM = re.compile(r"^( *)([-*+]|[0-9]{1,9}[.)])( +)(.*)$")
 _CHECKBOX_REST = re.compile(r"^\[[ xX]\](?:[ \t]|$)")
 _LIST_ITEM_START = re.compile(r"^[ \t]*(?:[-*+]|[0-9]{1,9}[.)])[ \t]+")
 _SUMMARY_LINE = re.compile(r"^\s*<summary>.*</summary>\s*$", re.IGNORECASE)
@@ -183,8 +183,8 @@ def _starts_metadata(text):
     return text.startswith("<!-- meta") and (len(text) == 9 or text[9].isspace())
 
 
-def _protected_lines(lines):
-    """Mirror WinkMarkdownFile.protectedLines so separators inside containers do not split cards."""
+def _protected_lines(lines, *, file_importer=False):
+    """Track containers using either body or file-import fence recognition."""
     protected = set()
     fence = None
     choice = False
@@ -203,7 +203,12 @@ def _protected_lines(lines):
             if "-->" in line:
                 html_comment = False
             continue
-        open_fence = _fence_opening(trimmed)
+        # The App file splitter accepts any leading backtick run; its body decoder
+        # excludes backtick info strings containing backticks (e.g. inline code).
+        if file_importer and trimmed.startswith("```"):
+            open_fence = trimmed[:len(trimmed) - len(trimmed.lstrip("`"))]
+        else:
+            open_fence = _fence_opening(trimmed)
         if open_fence:
             fence = open_fence
             protected.add(index)
@@ -290,10 +295,15 @@ def _scan_display_math(lines, start, number):
     after_open = lines[start].strip()[2:]
     if len(after_open) >= 2 and after_open.endswith("$$"):
         return start
+    if after_open:
+        raise InputError(f"card {number}: put the opening $$ on its own line for a multiline formula")
     end = start + 1
     while end < len(lines):
-        if lines[end].strip() == "$$":
+        trimmed = lines[end].strip()
+        if trimmed == "$$":
             return end
+        if trimmed.endswith("$$"):
+            raise InputError(f"card {number}: put the closing $$ on its own line for a multiline formula")
         end += 1
     raise InputError(f"card {number}: unclosed $$ display formula (put the closing $$ on its own line)")
 
@@ -311,6 +321,7 @@ def _validate_choice_body(body_lines, number):
     list_marker = None
     list_content_col = 0
     trailing_options = 0
+    option_has_children = False
     blank = False
     i = 0
 
@@ -343,40 +354,30 @@ def _validate_choice_body(body_lines, number):
             i += 1
             continue
 
-        match = _UNORDERED_ITEM.match(line)
-        if match:
-            item_indent = len(match.group(1))
-            marker = match.group(2)
-            content_col = item_indent + 1 + len(match.group(3))
-            rest = match.group(4)
-            if in_list and item_indent >= list_content_col:
-                # Nested list item under the current list item: never a top-level option.
-                if trailing_options > 0:
-                    trailing_options = 0
-                else:
-                    prompt_has_content = True
-                blank = False
-                i += 1
-                continue
-            is_option = _CHECKBOX_REST.match(rest) is not None
-            if in_list and marker == list_marker:
-                if is_option:
-                    trailing_options += 1
-                else:
-                    prompt_has_content = True
-                    trailing_options = 0
-                list_content_col = content_col
+        match = _CHOICE_LIST_ITEM.match(line.expandtabs(4))
+        if match and in_list and len(match[1]) >= list_content_col:
+            # Nested entries belong to their parent, including ordered parents.
+            if trailing_options:
+                option_has_children = True
+            blank = False
+            i += 1
+            continue
+        if match and len(match[1]) <= 3:
+            marker = match[2][-1]  # Ordered lists are grouped by delimiter ('.' or ')').
+            if in_list and marker != list_marker:
+                prompt_has_content = True
+                trailing_options = 0
+            if not trailing_options:
+                option_has_children = False
+            in_list = True
+            list_marker = marker
+            padding = len(match[3])
+            list_content_col = match.end(2) + (padding if padding <= 4 else 1)
+            if marker in "-*+" and padding <= 4 and _CHECKBOX_REST.match(match[4]):
+                trailing_options += 1
             else:
-                if in_list:
-                    prompt_has_content = True
-                in_list = True
-                list_marker = marker
-                list_content_col = content_col
-                if is_option:
-                    trailing_options = 1
-                else:
-                    prompt_has_content = True
-                    trailing_options = 0
+                prompt_has_content = True
+                trailing_options = 0
             blank = False
             i += 1
             continue
@@ -395,6 +396,8 @@ def _validate_choice_body(body_lines, number):
 
     if trailing_options == 0:
         raise InputError(f"card {number}: choice block must end with a top-level option list (- [ ] / - [x])")
+    if option_has_children:
+        raise InputError(f"card {number}: a choice option cannot contain a nested list")
     if not prompt_has_content:
         raise InputError(f"card {number}: choice block must include a non-empty prompt before options")
 
@@ -570,11 +573,14 @@ def parse(text):
 
     # Split manuscript into per-card (front, back) chunks, matching WinkMarkdownFile.swift.
     protected = _protected_lines(lines)
+    ambiguous_lines = protected ^ _protected_lines(lines, file_importer=True)
     chunks = [([], [])]
     misplaced_meta = set()
     on_back = False
     for index, line in enumerate(lines):
         stripped = line.strip()
+        if index in ambiguous_lines and line.rstrip() in {"<!-- card -->", "<!-- back -->"}:
+            raise InputError(f"line {index + 1}: ambiguous separator after backticks; use single backticks for inline code or a complete fenced block")
         top = index not in protected and not line.startswith((" ", "\t", ">", "- ", "* ", "+ "))
         if top and _starts_metadata(stripped):
             if on_back or any(prev.strip() for prev in chunks[-1][0]):
