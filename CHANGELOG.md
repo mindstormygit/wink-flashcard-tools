@@ -1,10 +1,12 @@
-# 2026-11-09: note Skill v2
-
-Note/choice authoring now uses `.winkmd` and media ZIPs, with hierarchy, stars, suggested pack names, colors and new-pack fill preference. Word Skill remains unchanged. Earlier releases retain legacy note builders.
-
 # Changelog
 
-This file records repository-wide releases. Component-specific changes are documented inside each Skill directory.
+This file records repository-wide releases. Component-specific changes are documented inside the Skill directory.
+
+## 2.0.0 — 2026-11-22
+
+- Merges `generate-twinkling-word-pack` into `generate-twinkling-pack` so users install and invoke one unified WinkNotes Skill for note, choice, and native vocabulary cards.
+- Note/choice authoring uses dialect-v2 `.winkmd` and media ZIPs, with hierarchy, stars, suggested pack names, colors, new-pack fill preference, and choice `shuffle` / `:::explanation` support.
+- Native vocabulary card/pack authoring continues delivering `.wink` (`WordDocument`) files via the bundled scripts. Earlier releases retain the standalone legacy Skills.
 
 ## 1.2.1 — 2026-07-30
 

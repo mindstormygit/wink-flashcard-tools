@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create reproducible release ZIP files for both WinkNotes Skills.
+"""Create a reproducible release ZIP file for the unified WinkNotes Skill.
 
 Before packaging, copy the dialect spec and its accept/reject samples from the WinkNotes App
 repository. The App's copy is the only one that is edited; the Skill's copies are generated.
@@ -19,7 +19,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = (
     "generate-twinkling-pack",
-    "generate-twinkling-word-pack",
 )
 IGNORED_NAMES = {".DS_Store", "__pycache__"}
 FIXED_TIMESTAMP = (2026, 1, 1, 0, 0, 0)
@@ -57,7 +56,7 @@ def sync_from_app(app_repo: Path) -> None:
     header = (
         f"{GENERATED_MARK} Source: WinkNotes App repository, {APP_SPEC.as_posix()}, "
         f"app version {app_version(app_repo)}, copied {datetime.date.today().isoformat()}. "
-        "Do not edit here: edit the App copy, then rerun scripts/package_skills.py. -->\n\n"
+        "Do not edit here: edit the App copy, then rerun scripts/package_skills.py --app-repo <path>. -->\n\n"
     )
     SKILL_SPEC.write_text(header + skill_spec_body(source.read_text(encoding="utf-8")), encoding="utf-8")
     SKILL_SAMPLES.parent.mkdir(parents=True, exist_ok=True)
@@ -109,16 +108,14 @@ def main() -> None:
     parser.add_argument(
         "--app-repo",
         type=Path,
-        help="WinkNotes App checkout that holds the dialect spec (default: $WINK_APP_REPO or ../iOS/TwinklingCard)",
+        help="Optional WinkNotes App checkout to sync the dialect spec before packaging (also via WINK_APP_REPO)",
     )
     args = parser.parse_args()
+    env_repo = os.environ.get("WINK_APP_REPO")
     if args.app_repo is not None:
         sync_from_app(args.app_repo.resolve())
-    elif (DEFAULT_APP_REPO / APP_SPEC).is_file():
-        sync_from_app(DEFAULT_APP_REPO.resolve())
-    else:
-        # CI and other machines have no App checkout: package the committed copy as is.
-        print(f"App repository not found at {DEFAULT_APP_REPO}; packaging the committed spec copy")
+    elif env_repo:
+        sync_from_app(Path(env_repo).resolve())
     output_dir = args.output.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 

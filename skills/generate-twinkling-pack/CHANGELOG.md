@@ -2,17 +2,17 @@
 
 All notable changes to Generate WinkNotes Pack are documented here.
 
-## 2.0.0 — 2026-11-09
+## 2.0.0 — 2026-11-22
 
-- Authors dialect-v2 `.winkmd` instead of legacy document JSON; ZIP includes media only when needed.
+- Merges native `WordDocument` vocabulary card/pack authoring (`.wink`, previously in `generate-twinkling-word-pack`) into this single Skill, with clear format routing and separate `.wink` / `.winkmd` delivery when a request needs both.
+- Authors dialect-v2 `.winkmd` instead of legacy document JSON for note and choice cards; ZIP includes media only when needed.
 - Supports multi-card files, hierarchical categories and colors, stars, suggested pack names and new-pack fill preference.
 - Adds mute for translations/notes and collapsed hints; supports ordinary images, recordings and carrying back existing `.rimg`.
-- New-card image occlusion is no longer authored. Legacy `.wink` output remains available from earlier Skill releases; the App still imports it.
-- Uses a small standard-library builder and envelope validator; full rich-document semantics are checked by the App. The validator also rejects what the App's strict import rejects: legacy/Anki syntax, unescaped brackets after CJK text, caret superscripts, and unclosed or misordered tags.
-- Examples put clozes in the sentence to complete; explanations stay read aloud, only translations and side notes are muted.
+- Syncs the dialect-v2 choice block additions from the App spec: optional per-question `shuffle=true/false` attribute (validated by `validate_winkmd.py`) and inline `:::explanation` blocks.
+- New-card image occlusion is no longer authored. Legacy `.wink` note/choice output remains available from earlier Skill releases; the App still imports it.
+- Uses small standard-library builders and validators (`build_winkmd.py` / `validate_winkmd.py` for `.winkmd` and media ZIPs; `build_word_wink.py` / `validate_word_wink.py` for `.wink` word cards/packs). Full rich-document semantics for `.winkmd` are checked by the App.
 - Ships the App's dialect spec unchanged as `references/wink-spec-markdown-format.md`, copied at packaging time; `advanced-v2.md` is removed. SKILL.md keeps the workflow and points to spec sections.
-- The validator also checks known tag values, and the tests read the App's shared accept/reject samples.
-- The builder writes `generator: generate-twinkling-pack <version>` into each delivered header, so a later App can suggest updating an old Skill.
+- The builder writes `generator: generate-twinkling-pack <version>` into each delivered `.winkmd` header, so a later App can suggest updating an old Skill.
 
 ## 1.2.1 — 2026-07-30
 

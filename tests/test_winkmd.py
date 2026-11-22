@@ -1,7 +1,10 @@
 import json
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 import zipfile
 from pathlib import Path
 
@@ -10,7 +13,15 @@ SKILL = REPO / "skills/generate-twinkling-pack"
 sys.path.insert(0, str(SKILL / "scripts"))
 sys.path.insert(0, str(REPO / "scripts"))
 from build_winkmd import GENERATOR, build, stamp
+from build_word_wink import (
+    InputError as WordInputError,
+    build_artifact as build_word_artifact,
+    load_source as load_word_source,
+    main as build_word_main,
+    write_wink,
+)
 from validate_winkmd import InputError, parse, validate
+from validate_word_wink import validate_word_wink
 import package_skills
 
 
@@ -134,6 +145,170 @@ class WinkmdDeliveryTests(unittest.TestCase):
         self.assertEqual(parse("---\nNote: 正文\n\n<!-- back -->\n\n背面")["cards"], 1)
         with self.assertRaises(InputError):
             parse("---\nwink_md_version: 2\npack_name: 未闭合")
+
+    def test_choice_header_attributes_and_inline_explanation(self):
+        for body in (
+            ":::choice{shuffle=false}\n哪项正确？\n- [ ] 甲\n- [x] 以上都是\n:::explanation\n解析内容。\n:::",
+            ":::choice{#q1 shuffle=true}\n哪项正确？\n- [x] 甲\n- [ ] 乙\n:::",
+            ":::choice{shuffle=false #q1}\n交换顺序\n- [x] 甲\n- [ ] 乙\n:::",
+            ":::choice{#q1\tshuffle=true}\n制表符分隔\n- [x] 甲\n- [ ] 乙\n:::",
+            ":::choice\n缩进闭题\n- [x] 甲\n- [ ] 乙\n  :::",
+            "前文段落\n\n  :::choice{shuffle=maybe}\n中段缩进开题不是选择题，只是普通段落",
+            ":::choice 不是选择题，只是普通段落",
+            "$$\n:::choice{shuffle=maybe}\n$$",
+            ":::choice\n题干\n$$\nx\n$$\n- [x] 甲\n- [ ] 乙\n:::",
+            ":::choice\n```code```\n- [x] 甲\n- [ ] 乙\n:::",
+            ":::choice\n- 题干条目\n- [x] 甲\n- [ ] 乙\n:::",
+            ":::choice\n题干\n- [x] 甲\n- [ ] 乙\n:::explanation\n:::choice{bogus}\n:::explanation\n第二个标记是普通文字\n:::\n\n<!-- back -->\n\n背面补充",
+            ":::choice\n题干带代码：\n```\n:::explanation\n:::\n```\n- [x] 甲\n- [ ] 乙\n:::explanation\n```\n:::\n```\n真解析\n:::",
+            "> {{mute}}甲\\\n> 乙{{/mute}}",
+            "<DETAILS>\n<summary>大写折叠块</summary>\n\n正文\n\n</DETAILS>",
+            "<details-extra>相似前缀不是折叠块</details-extra>",
+        ):
+            with self.subTest(valid=body):
+                self.assertEqual(parse(body)["cards"], 1)
+        self.assertEqual(
+            parse(":::choice\n题干\n$$\nx\n$$\n- [x] 甲\n:::\n\n<!-- back -->\n\n背面\n\n<!-- card -->\n\n第二张")["cards"],
+            2,
+        )
+        for body in (
+            ":::choice{shuffle=maybe}\n题干\n- [x] 甲\n:::",
+            "  :::choice{shuffle=maybe}\n题干\n- [x] 甲\n:::",
+            "<!-- meta\n{}\n-->\n  :::choice{shuffle=maybe}\n题干\n- [x] 甲\n:::",
+            ":::choice{shuffle=true shuffle=false}\n题干\n- [x] 甲\n:::",
+            ":::choice{#q1 #q2}\n题干\n- [x] 甲\n:::",
+            ":::choice{#a!b}\n题干\n- [x] 甲\n:::",
+            ":::choice{}\n题干\n- [x] 甲\n:::",
+            ":::choice{foo=bar}\n题干\n- [x] 甲\n:::",
+            ":::choice{shuffle=false\n题干\n- [x] 甲\n:::",
+            ":::choice\n$$\n:::explanation\nx\n$$\n- [x] 甲\n:::",
+            ":::choice\n题干\n$$\nx$$\n- [x] 甲\n:::",
+            ":::choice\n- [x] 只有选项没有题干\n:::",
+            ":::choice\n题干\n- [x] 甲\n# 紧接标题\n:::",
+            ":::choice\n- 题干列表\n  - [x] 嵌套选项不算顶层\n:::",
+            ":::choice\n题干\n- [x] {{mute}}选项一\n- [ ] 选项二{{/mute}}\n:::",
+            ":::choice\n题干\n:::explanation\n解析不能在选项前\n- [x] 甲\n:::",
+            ":::choice\n题干\n- [x] 甲\n\n选项后的普通段落\n:::explanation\n解析\n:::",
+            ":::choice\n题干\n- [x] 甲\n- 非选项普通列表项\n:::explanation\n解析\n:::",
+            ":::choice\n题干\n- [x] {{mute}}跨区未闭合\n:::explanation\n这里关{{/mute}}\n:::",
+            ":::choice\n题干\n- [x] 甲\n:::explanation\n<details>\n<summary>提示</summary>\n\n不允许\n\n</details>\n:::",
+            ":::choice\n题干\n- [x] 甲\n:::explanation\n<DETAILS>\n<summary>大写提示</summary>\n\n不允许\n\n</DETAILS>\n:::",
+            "<details>\n<summary>提示</summary>\n\n:::choice\n题干\n- [x] 甲\n:::\n\n</details>",
+            "<details>\n<summary>{{mute}}标题</summary>\n正文{{/mute}}\n</details>",
+        ):
+            with self.subTest(invalid=body), self.assertRaises(InputError):
+                parse(body)
+
+
+class SkillPackagingTests(unittest.TestCase):
+    def test_release_archive_contains_both_workflows_and_valid_yaml(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive_path = package_skills.write_archive("generate-twinkling-pack", Path(tmp))
+            with zipfile.ZipFile(archive_path) as archive:
+                names = set(archive.namelist())
+                for required in (
+                    "generate-twinkling-pack/SKILL.md",
+                    "generate-twinkling-pack/agents/openai.yaml",
+                    "generate-twinkling-pack/references/note-workflow.md",
+                    "generate-twinkling-pack/references/word-workflow.md",
+                    "generate-twinkling-pack/scripts/build_winkmd.py",
+                    "generate-twinkling-pack/scripts/validate_winkmd.py",
+                    "generate-twinkling-pack/scripts/build_word_wink.py",
+                    "generate-twinkling-pack/scripts/validate_word_wink.py",
+                ):
+                    self.assertIn(required, names)
+                skill_md = archive.read("generate-twinkling-pack/SKILL.md").decode("utf-8")
+                openai_yaml = archive.read("generate-twinkling-pack/agents/openai.yaml").decode("utf-8")
+            self.assertTrue(skill_md.startswith("---\n"))
+            if shutil.which("ruby"):
+                script = (
+                    'require "yaml"; '
+                    'text = STDIN.read; '
+                    'm = text.match(/\\A---\\n(.*?)\\n---\\n/m) or abort("missing frontmatter"); '
+                    'data = YAML.safe_load(m[1]); '
+                    'abort("bad name") unless data["name"] == "generate-twinkling-pack"; '
+                    'abort("bad desc") unless data["description"].is_a?(String) && !data["description"].strip.empty?'
+                )
+                result = subprocess.run(["ruby", "-e", script], input=skill_md, text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                openai_check = subprocess.run(
+                    ["ruby", "-ryaml", "-e", 'd = YAML.safe_load(STDIN.read); abort("bad") unless d["interface"].is_a?(Hash)'],
+                    input=openai_yaml,
+                    text=True,
+                    capture_output=True,
+                )
+                self.assertEqual(openai_check.returncode, 0, openai_check.stderr)
+
+
+class WordWinkDeliveryTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name)
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def write_json(self, name, payload):
+        path = self.root / name
+        path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        return path
+
+    def test_shipped_word_examples_validate(self):
+        for name, expected_product in (
+            ("example-word-pack.wink", "pack"),
+            ("example-word-card.wink", "card"),
+        ):
+            with self.subTest(example=name):
+                summary = validate_word_wink(SKILL / "examples" / name)
+                self.assertEqual(summary["product"], expected_product)
+
+    def test_word_json_examples_build_and_validate(self):
+        cases = (
+            ("example-words.json", "auto", "pack"),
+            ("example-word-card.json", "auto", "card"),
+            ("example-word-card.json", "card", "card"),
+            ("example-one-word-pack.json", "pack", "pack"),
+        )
+        for name, mode, expected_product in cases:
+            with self.subTest(source=name, mode=mode):
+                source = load_word_source(SKILL / "examples" / name, mode)
+                self.assertEqual(source["product"], expected_product)
+                out = self.root / f"{Path(name).stem}-{mode}.wink"
+                write_wink(build_word_artifact(source, source["product"]), out)
+                summary = validate_word_wink(out)
+                self.assertEqual(summary["product"], expected_product)
+
+    def test_cli_explicit_standalone_word_card(self):
+        out = self.root / "cli-card.wink"
+        rc = build_word_main([str(SKILL / "examples/example-word-card.json"), str(out), "--product", "card"])
+        self.assertEqual(rc, 0)
+        summary = validate_word_wink(out)
+        self.assertEqual(summary["product"], "card")
+        self.assertEqual(summary["word"], "resilient")
+
+    def test_invalid_word_inputs_are_rejected(self):
+        bad_cases = (
+            ("multi-word-forced-card", "card", {"langCode": "en", "words": [{"word": "a", "definition": "甲"}, {"word": "b", "definition": "乙"}]}),
+            ("card-with-name", "card", {"name": "不应有包名", "langCode": "en", "words": [{"word": "a", "definition": "甲"}]}),
+            ("card-with-tags", "card", {"langCode": "en", "tags": [{"id": "t1", "name": "分类"}], "words": [{"word": "a", "definition": "甲"}]}),
+            ("card-with-word-tag", "card", {"langCode": "en", "words": [{"word": "a", "definition": "甲", "tag": "t1"}]}),
+            ("unsupported-lang", "auto", {"langCode": "ru", "words": [{"word": "мир", "definition": "世界"}]}),
+            ("mismatched-template", "card", {"langCode": "en", "words": [{"word": "apple", "definition": "苹果", "extras": [{"label": "假名", "content": "あ", "templateKey": "ja.kana"}]}]}),
+        )
+        for name, mode, payload in bad_cases:
+            with self.subTest(case=name), self.assertRaises(WordInputError):
+                load_word_source(self.write_json(f"{name}.json", payload), mode)
+
+    def test_write_wink_race_preserves_existing_file(self):
+        out = self.root / "race.wink"
+        out.write_bytes(b"winner-content")
+        source = load_word_source(SKILL / "examples/example-word-card.json", "card")
+        artifact = build_word_artifact(source, "card")
+        with mock.patch.object(Path, "exists", return_value=False):
+            with self.assertRaises(FileExistsError):
+                write_wink(artifact, out)
+        self.assertTrue(out.exists())
+        self.assertEqual(out.read_bytes(), b"winner-content")
 
 if __name__ == '__main__':
     unittest.main()

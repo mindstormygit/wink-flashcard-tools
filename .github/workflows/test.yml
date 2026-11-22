@@ -22,26 +22,41 @@ jobs:
           python3 skills/generate-twinkling-pack/scripts/validate_winkmd.py skills/generate-twinkling-pack/examples/example-pack.winkmd
           python3 skills/generate-twinkling-pack/scripts/validate_winkmd.py skills/generate-twinkling-pack/examples/example-card.winkmd
           python3 skills/generate-twinkling-pack/scripts/validate_winkmd.py skills/generate-twinkling-pack/examples/example-media.zip
-          python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \
-            skills/generate-twinkling-word-pack/examples/example-word-pack.wink
-          python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \
-            skills/generate-twinkling-word-pack/examples/example-word-card.wink
+          python3 skills/generate-twinkling-pack/scripts/validate_word_wink.py \
+            skills/generate-twinkling-pack/examples/example-word-pack.wink
+          python3 skills/generate-twinkling-pack/scripts/validate_word_wink.py \
+            skills/generate-twinkling-pack/examples/example-word-card.wink
       - name: Build delivery files
         run: |
           python3 skills/generate-twinkling-pack/scripts/build_winkmd.py skills/generate-twinkling-pack/examples/example-pack.winkmd /tmp/example-pack.winkmd
           python3 skills/generate-twinkling-pack/scripts/build_winkmd.py skills/generate-twinkling-pack/examples/example-media.winkmd /tmp/example-media.zip
-          python3 skills/generate-twinkling-word-pack/scripts/build_word_wink.py \
-            skills/generate-twinkling-word-pack/examples/example-words.json \
+          python3 skills/generate-twinkling-pack/scripts/build_word_wink.py \
+            skills/generate-twinkling-pack/examples/example-words.json \
             /tmp/example-word-pack.wink
-          python3 skills/generate-twinkling-word-pack/scripts/build_word_wink.py \
-            skills/generate-twinkling-word-pack/examples/example-word-card.json \
+          python3 skills/generate-twinkling-pack/scripts/build_word_wink.py \
+            skills/generate-twinkling-pack/examples/example-word-card.json \
             /tmp/example-word-card.wink
-          python3 skills/generate-twinkling-word-pack/scripts/build_word_wink.py \
-            skills/generate-twinkling-word-pack/examples/example-one-word-pack.json \
+          python3 skills/generate-twinkling-pack/scripts/build_word_wink.py \
+            skills/generate-twinkling-pack/examples/example-word-card.json \
+            /tmp/example-word-card-explicit.wink --product card
+          python3 skills/generate-twinkling-pack/scripts/build_word_wink.py \
+            skills/generate-twinkling-pack/examples/example-one-word-pack.json \
             /tmp/example-one-word-pack.wink --product pack
-      - name: Build release archives
+      - name: Build release archive
         run: python3 scripts/package_skills.py
-      - name: Test archives
+      - name: Test archive and Skill YAML frontmatter
         run: |
           unzip -t dist/generate-twinkling-pack.zip
-          unzip -t dist/generate-twinkling-word-pack.zip
+          unzip -p dist/generate-twinkling-pack.zip generate-twinkling-pack/SKILL.md | ruby -ryaml -e '
+            text = STDIN.read
+            m = text.match(/\A---\n(.*?)\n---\n/m) or abort("Missing YAML frontmatter")
+            data = YAML.safe_load(m[1])
+            abort("Unexpected name: #{data["name"].inspect}") unless data["name"] == "generate-twinkling-pack"
+            abort("Invalid description") unless data["description"].is_a?(String) && !data["description"].strip.empty?
+            puts "YAML frontmatter OK: #{data["name"]}"
+          '
+          unzip -p dist/generate-twinkling-pack.zip generate-twinkling-pack/agents/openai.yaml | ruby -ryaml -e '
+            data = YAML.safe_load(STDIN.read)
+            abort("Invalid openai.yaml") unless data.is_a?(Hash) && data["interface"].is_a?(Hash)
+            puts "openai.yaml OK"
+          '

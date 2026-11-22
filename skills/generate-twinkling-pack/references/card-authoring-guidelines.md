@@ -31,7 +31,8 @@
 - Keep options grammatically parallel and similar in scope and length.
 - Avoid “all of the above,” “none of the above,” overlapping options, double negatives, and formatting that reveals the answer.
 - Do not duplicate option text. Include at least two options and at least one correct answer.
-- Add a concise explanatory note that states why the correct option is correct and, when useful, why a tempting distractor is wrong.
+- Add a concise explanatory note that states why the correct option is correct and, when useful, why a tempting distractor is wrong. Attach per-question explanations inline with `:::explanation` after the last option (unmuted); reserve `<!-- back -->` for card-level notes or when targeting an earlier v2 build without inline explanations.
+- Omit `shuffle` on `:::choice` so the pack's shuffle setting applies; add `:::choice{shuffle=false}` only when option order carries meaning (such as ordered steps or position-dependent options).
 - Do not prefix option content with letters or numbers; WinkNotes displays option labels.
 
 ## Formatting

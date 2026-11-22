@@ -34,7 +34,99 @@ HEADER_LINE = re.compile(r"^\s*(?:wink_md_version|pack_name|categories|fill_blan
 # Known tags whose value the App checks; a wrong value rejects the card (spec: Authoring tiers and tag tables).
 _HEX = r"#[0-9A-Fa-f]{6}"
 _CLOZE_PART = rf"(?:id=[A-Za-z0-9_-]{{1,64}}|color={_HEX})"
+_CHOICE_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+_DETAILS_OPENING = re.compile(
+    r'^<details(\s+open(="[^"]*")?)?\s*>\s*(?:<summary>(.*)</summary>)?\s*$',
+    re.IGNORECASE,
+)
+_CONTAINER_MARKERS = re.compile(r"^(?:(?:[-*+]|[0-9]+[.)]|>)[ \t]+)+")
+_UNORDERED_ITEM = re.compile(r"^([ ]{0,3})([-*+])([ \t]+)(.*)$")
+_CHECKBOX_REST = re.compile(r"^\[[ xX]\](?:[ \t]|$)")
+_LIST_ITEM_START = re.compile(r"^[ \t]*(?:[-*+]|[0-9]{1,9}[.)])[ \t]+")
+_SUMMARY_LINE = re.compile(r"^\s*<summary>.*</summary>\s*$", re.IGNORECASE)
+_HEADING_OR_RULE = re.compile(r"^[ ]{0,3}(?:#{1,6}(?:[ \t]|$)|(?:[-*_][ \t]*){3,}$)")
+_PARAGRAPH_BREAK_BLOCK = re.compile(
+    r"^[ ]{0,3}(?:#{1,6}(?:[ \t]|$)|>|(?:[-*_][ \t]*){3,}$|[0-9]{1,9}[.)][ \t]+)"
+)
 _NUMBER = re.compile(r"[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?")
+
+
+class InputError(ValueError):
+    pass
+
+
+def _fence_opening(trimmed):
+    """Match WinkMarkdownSource.fenceOpening: backtick fence info strings cannot contain backticks."""
+    for marker in ("```", "~~~"):
+        if trimmed.startswith(marker):
+            ch = marker[0]
+            run_len = len(trimmed) - len(trimmed.lstrip(ch))
+            rest = trimmed[run_len:]
+            if ch == "`" and "`" in rest:
+                return None
+            return ch * run_len
+    return None
+
+
+def _closes_fence(trimmed, open_fence):
+    ch = open_fence[0]
+    run_len = len(trimmed) - len(trimmed.lstrip(ch))
+    return run_len >= len(open_fence) and not trimmed[run_len:].strip()
+
+
+def _details_opening(line):
+    """Match WinkMarkdownSource.detailsOpening: column-0 <details[ open]>, case-insensitive.
+
+    Returns inline summary string (or '' if no inline summary) when matched; None otherwise.
+    """
+    if not line[:8].lower() == "<details":
+        return None
+    match = _DETAILS_OPENING.match(line)
+    if not match:
+        return None
+    return match.group(3) or ""
+
+
+def _is_details_closing(line):
+    """Match WinkMarkdownSource.isDetailsClosing: column-0 </details>, case-insensitive."""
+    return bool(line) and not line[0].isspace() and line.strip().lower() == "</details>"
+
+
+def _choice_opening(line, number):
+    """Match WinkMarkdownSource.choiceHeader: column-0 :::choice or :::choice{...}."""
+    if not line.startswith(":::choice"):
+        return False
+    stripped = line.strip()
+    rest = stripped[len(":::choice"):]
+    if not rest:
+        return True
+    if not rest.startswith("{"):
+        return False
+    if not rest.endswith("}"):
+        raise InputError(f"card {number}: choice header is missing closing }}")
+    inner = rest[1:-1].strip()
+    if not inner:
+        raise InputError(f"card {number}: choice header attributes cannot be empty")
+    seen_id = seen_shuffle = False
+    for token in re.split(r"[ \t]+", inner):
+        if token.startswith("#"):
+            if seen_id or not _CHOICE_ID.fullmatch(token[1:]):
+                raise InputError(f"card {number}: invalid choice id {token}")
+            seen_id = True
+        elif token.startswith("shuffle="):
+            if seen_shuffle or token[len("shuffle="):] not in {"true", "false"}:
+                raise InputError(f"card {number}: choice shuffle must be true or false (once)")
+            seen_shuffle = True
+        else:
+            raise InputError(f"card {number}: unknown choice attribute {token}")
+    return True
+
+
+def _is_valid_choice_opening(line):
+    try:
+        return _choice_opening(line, 0)
+    except InputError:
+        return False
 
 
 def _attribute_text(value):
@@ -78,10 +170,6 @@ TAG_VALUES = {
 }
 
 
-class InputError(ValueError):
-    pass
-
-
 def category_path(value):
     if not isinstance(value, list) or len(value) > 32 or any(
         not isinstance(name, str) or not name.strip() or len(name) > 200
@@ -89,6 +177,353 @@ def category_path(value):
     ):
         raise InputError("category must be one parent-to-child path, with up to 32 nonempty names (1–200 characters each)")
     return value
+
+
+def _starts_metadata(text):
+    return text.startswith("<!-- meta") and (len(text) == 9 or text[9].isspace())
+
+
+def _protected_lines(lines):
+    """Mirror WinkMarkdownFile.protectedLines so separators inside containers do not split cards."""
+    protected = set()
+    fence = None
+    choice = False
+    details = 0
+    math = False
+    html_comment = False
+    for index, line in enumerate(lines):
+        trimmed = line.strip()
+        if fence:
+            protected.add(index)
+            if _closes_fence(trimmed, fence):
+                fence = None
+            continue
+        if html_comment:
+            protected.add(index)
+            if "-->" in line:
+                html_comment = False
+            continue
+        open_fence = _fence_opening(trimmed)
+        if open_fence:
+            fence = open_fence
+            protected.add(index)
+            continue
+        if not choice and not math and trimmed.startswith("<!--") and "-->" not in trimmed:
+            html_comment = True
+            continue
+        if _is_valid_choice_opening(line):
+            choice = True
+        if _details_opening(line) is not None:
+            details += 1
+        if trimmed == "$$":
+            math = not math
+            protected.add(index)
+            continue
+        if choice or details > 0 or math:
+            protected.add(index)
+        if trimmed == ":::":
+            choice = False
+        if _is_details_closing(line):
+            details = max(0, details - 1)
+    return protected
+
+
+def _take_metadata(front, number):
+    """Mirror WinkMarkdownFile.takeMetadata: validate leading meta, strip it, and trim remaining front."""
+    if not _starts_metadata(front):
+        return front
+    end = front.find("-->")
+    if end == -1:
+        raise InputError(f"card {number}: meta needs a closing -->")
+    raw = front[len("<!-- meta"):end]
+    meta = json.loads(raw)
+    if not isinstance(meta, dict):
+        raise InputError(f"card {number}: meta must be a JSON object")
+    category_path(meta.get("category", []))
+    if "starred" in meta and not isinstance(meta["starred"], bool):
+        raise InputError(f"card {number}: starred must be a boolean")
+    remaining = front[end + 3:].strip()
+    if _starts_metadata(remaining):
+        raise InputError(f"card {number}: meta belongs once at the start of the front")
+    return remaining
+
+
+def _close_paragraph(paragraph, number):
+    stack = []
+    for match in TAG.finditer("\n".join(paragraph)):
+        closing, name = match.group(1), match.group(2)
+        inner = match.group(0)[2:-2]
+        if not closing and inner.startswith("ruby64="):
+            raise InputError(f"card {number}: do not write {{{{ruby64=…}}}}; write {{{{ruby=reading}}}} (spec: Authoring tiers)")
+        for prefix, rule in TAG_VALUES.items():
+            if closing or not inner.startswith(prefix):
+                continue
+            value = inner[len(prefix):]
+            if not (rule(value) if callable(rule) else re.fullmatch(rule, value)):
+                raise InputError(f"card {number}: {{{{{inner}}}}} has an invalid value; check the tag tables in wink-spec-markdown-format.md")
+        name = "ruby" if name == "ruby64" else name
+        if name not in PAIRED:
+            continue
+        if not closing:
+            stack.append(name)
+        elif stack and stack[-1] == name:
+            stack.pop()
+        else:
+            raise InputError(f"card {number}: {{{{/{name}}}}} has no matching opening tag in this paragraph, or tags close out of order")
+    if stack:
+        raise InputError(f"card {number}: {{{{{stack[-1]}}}}} must be closed in the same paragraph")
+    paragraph.clear()
+
+
+def _check_inline_line(line, number, paragraph, references):
+    visible = re.sub(r"(`+).*?\1", "", line)
+    visible = INLINE_MATH.sub("", visible)
+    # Note and ruby texts are plain attributes; legacy-looking text inside them is literal.
+    if LEGACY.search(ATTRIBUTE_TAG.sub("{{attr}}", visible)):
+        raise InputError(f"card {number}: use dialect v2 only; rewrite legacy/Anki syntax and escape literal brackets as \\[ \\]")
+    paragraph.append(visible)
+    references.extend((number, ref) for ref in re.findall(r"!\[[^\]]*\]\(att:([^\s)]+)\)", visible))
+
+
+def _scan_display_math(lines, start, number):
+    """Match the spec (`$$` on its own lines, or single-line `$$…$$`) so card splitting stays aligned with the App."""
+    after_open = lines[start].strip()[2:]
+    if len(after_open) >= 2 and after_open.endswith("$$"):
+        return start
+    end = start + 1
+    while end < len(lines):
+        if lines[end].strip() == "$$":
+            return end
+        end += 1
+    raise InputError(f"card {number}: unclosed $$ display formula (put the closing $$ on its own line)")
+
+
+def _validate_choice_body(body_lines, number):
+    """Ensure choice body has a non-empty prompt and ends with a top-level checkbox option list."""
+    body = list(body_lines)
+    while body and not body[-1].strip():
+        body.pop()
+    if not body:
+        raise InputError(f"card {number}: choice block must include a prompt and options")
+
+    prompt_has_content = False
+    in_list = False
+    list_marker = None
+    list_content_col = 0
+    trailing_options = 0
+    blank = False
+    i = 0
+
+    while i < len(body):
+        line = body[i]
+        stripped = line.strip()
+        open_fence = _fence_opening(stripped)
+        if open_fence:
+            end = i + 1
+            while end < len(body) and not _closes_fence(body[end].strip(), open_fence):
+                end += 1
+            if end >= len(body):
+                raise InputError(f"card {number}: unclosed code block")
+            prompt_has_content = True
+            in_list = False
+            trailing_options = 0
+            blank = False
+            i = end + 1
+            continue
+        if stripped.startswith("$$"):
+            end = _scan_display_math(body, i, number)
+            prompt_has_content = True
+            in_list = False
+            trailing_options = 0
+            blank = False
+            i = end + 1
+            continue
+        if not stripped:
+            blank = True
+            i += 1
+            continue
+
+        match = _UNORDERED_ITEM.match(line)
+        if match:
+            item_indent = len(match.group(1))
+            marker = match.group(2)
+            content_col = item_indent + 1 + len(match.group(3))
+            rest = match.group(4)
+            if in_list and item_indent >= list_content_col:
+                # Nested list item under the current list item: never a top-level option.
+                if trailing_options > 0:
+                    trailing_options = 0
+                else:
+                    prompt_has_content = True
+                blank = False
+                i += 1
+                continue
+            is_option = _CHECKBOX_REST.match(rest) is not None
+            if in_list and marker == list_marker:
+                if is_option:
+                    trailing_options += 1
+                else:
+                    prompt_has_content = True
+                    trailing_options = 0
+                list_content_col = content_col
+            else:
+                if in_list:
+                    prompt_has_content = True
+                in_list = True
+                list_marker = marker
+                list_content_col = content_col
+                if is_option:
+                    trailing_options = 1
+                else:
+                    prompt_has_content = True
+                    trailing_options = 0
+            blank = False
+            i += 1
+            continue
+
+        if in_list and not blank and not _PARAGRAPH_BREAK_BLOCK.match(line) and _details_opening(line) is None:
+            # Lazy continuation line within the same list item's single paragraph.
+            blank = False
+            i += 1
+            continue
+
+        prompt_has_content = True
+        in_list = False
+        trailing_options = 0
+        blank = False
+        i += 1
+
+    if trailing_options == 0:
+        raise InputError(f"card {number}: choice block must end with a top-level option list (- [ ] / - [x])")
+    if not prompt_has_content:
+        raise InputError(f"card {number}: choice block must include a non-empty prompt before options")
+
+
+def _validate_side(lines, number, references, *, choice_policy="allow", allows_details=True):
+    """Validate one card side or nested block following WinkMarkdownSource block precedence."""
+    paragraph = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.strip()
+
+        # 1. Fenced code block
+        open_fence = _fence_opening(stripped)
+        if open_fence:
+            _close_paragraph(paragraph, number)
+            end = i + 1
+            while end < len(lines) and not _closes_fence(lines[end].strip(), open_fence):
+                end += 1
+            if end >= len(lines):
+                raise InputError(f"card {number}: unclosed code block")
+            i = end + 1
+            continue
+
+        # 2. Choice block (outer scan respects only code fences, matching Swift WinkMarkdownSource)
+        if choice_policy != "literal" and line.startswith(":::choice") and _choice_opening(line, number):
+            if choice_policy == "forbid":
+                raise InputError(f"card {number}: choice block is not allowed inside <details>")
+            _close_paragraph(paragraph, number)
+            collected = []
+            explanation_start = None
+            inner_fence = None
+            end = i + 1
+            closed = False
+            while end < len(lines):
+                inner = lines[end]
+                inner_trimmed = inner.strip()
+                if inner_fence:
+                    if _closes_fence(inner_trimmed, inner_fence):
+                        inner_fence = None
+                else:
+                    opened = _fence_opening(inner_trimmed)
+                    if opened:
+                        inner_fence = opened
+                    elif inner.startswith(":::explanation") and inner_trimmed == ":::explanation" and explanation_start is None:
+                        explanation_start = len(collected)
+                        end += 1
+                        continue
+                    elif inner_trimmed == ":::":
+                        closed = True
+                        break
+                collected.append(inner)
+                end += 1
+            if not closed:
+                raise InputError(f"card {number}: unclosed choice block")
+            body = collected[:explanation_start] if explanation_start is not None else collected
+            explanation = collected[explanation_start:] if explanation_start is not None else None
+            _validate_choice_body(body, number)
+            _validate_side(body, number, references, choice_policy="literal", allows_details=False)
+            if explanation is not None:
+                _validate_side(explanation, number, references, choice_policy="literal", allows_details=False)
+            i = end + 1
+            continue
+
+        # 3. Collapsible <details> block (case-insensitive column-0 tag, matching Swift)
+        details_summary = _details_opening(line)
+        if details_summary is not None:
+            if not allows_details:
+                raise InputError(f"card {number}: <details> is not allowed inside choice blocks")
+            _close_paragraph(paragraph, number)
+            if details_summary:
+                summary_para = []
+                _check_inline_line(details_summary, number, summary_para, references)
+                _close_paragraph(summary_para, number)
+            depth = 1
+            inner_fence = None
+            end = i + 1
+            while end < len(lines):
+                inner = lines[end]
+                marker_stripped = _CONTAINER_MARKERS.sub("", inner.strip())
+                if inner_fence:
+                    if _closes_fence(marker_stripped, inner_fence):
+                        inner_fence = None
+                else:
+                    opened = _fence_opening(marker_stripped)
+                    if opened:
+                        inner_fence = opened
+                    elif _details_opening(inner) is not None:
+                        depth += 1
+                    elif _is_details_closing(inner):
+                        depth -= 1
+                        if depth == 0:
+                            break
+                end += 1
+            if depth != 0:
+                raise InputError(f"card {number}: unclosed <details> block")
+            _validate_side(lines[i + 1:end], number, references, choice_policy="forbid", allows_details=True)
+            i = end + 1
+            continue
+
+        # 4. Display formula block (`$$` … `$$`)
+        if stripped.startswith("$$"):
+            _close_paragraph(paragraph, number)
+            end = _scan_display_math(lines, i, number)
+            i = end + 1
+            continue
+
+        # 5. Ordinary inline content
+        if not stripped:
+            _close_paragraph(paragraph, number)
+            i += 1
+            continue
+        if _SUMMARY_LINE.fullmatch(line):
+            _close_paragraph(paragraph, number)
+            _check_inline_line(line, number, paragraph, references)
+            _close_paragraph(paragraph, number)
+            i += 1
+            continue
+        is_quote = stripped.startswith(">")
+        if (
+            _LIST_ITEM_START.match(line)
+            or _HEADING_OR_RULE.match(line)
+            or (paragraph and is_quote != paragraph[-1].lstrip().startswith(">"))
+        ):
+            _close_paragraph(paragraph, number)
+        _check_inline_line(line, number, paragraph, references)
+        i += 1
+
+    _close_paragraph(paragraph, number)
 
 
 def parse(text):
@@ -133,130 +568,45 @@ def parse(text):
                 raise InputError("category paths must be nonempty and unique; colors use #RRGGBB")
             seen.add(path)
 
-    cards, references, number = [[]], [], 1
-    paragraph = []
-
-    def close_paragraph():
-        stack = []
-        for match in TAG.finditer("\n".join(paragraph)):
-            closing, name = match.group(1), match.group(2)
-            inner = match.group(0)[2:-2]
-            if not closing and inner.startswith("ruby64="):
-                raise InputError(f"card {number}: do not write {{{{ruby64=…}}}}; write {{{{ruby=reading}}}} (spec: Authoring tiers)")
-            for prefix, rule in TAG_VALUES.items():
-                if closing or not inner.startswith(prefix):
-                    continue
-                value = inner[len(prefix):]
-                if not (rule(value) if callable(rule) else re.fullmatch(rule, value)):
-                    raise InputError(f"card {number}: {{{{{inner}}}}} has an invalid value; check the tag tables in wink-spec-markdown-format.md")
-            name = "ruby" if name == "ruby64" else name
-            if name not in PAIRED:
-                continue
-            if not closing:
-                stack.append(name)
-            elif stack and stack[-1] == name:
-                stack.pop()
-            else:
-                raise InputError(f"card {number}: {{{{/{name}}}}} has no matching opening tag in this paragraph, or tags close out of order")
-        if stack:
-            raise InputError(f"card {number}: {{{{{stack[-1]}}}}} must be closed in the same paragraph")
-        paragraph.clear()
-    fence = None
-    container = []
-    meta_lines = None
-    at_card_start = True
-    for line in lines:
+    # Split manuscript into per-card (front, back) chunks, matching WinkMarkdownFile.swift.
+    protected = _protected_lines(lines)
+    chunks = [([], [])]
+    misplaced_meta = set()
+    on_back = False
+    for index, line in enumerate(lines):
         stripped = line.strip()
-        if meta_lines is not None:
-            if "-->" in line:
-                before, after = line.split("-->", 1)
-                meta_lines.append(before)
-                meta = json.loads("\n".join(meta_lines))
-                if not isinstance(meta, dict):
-                    raise InputError(f"card {number}: meta must be a JSON object")
-                category_path(meta.get("category", []))
-                if "starred" in meta and not isinstance(meta["starred"], bool):
-                    raise InputError(f"card {number}: starred must be a boolean")
-                meta_lines = None
-                if after.strip():
-                    cards[-1].append(after)
-                at_card_start = False
-            else:
-                meta_lines.append(line)
+        top = index not in protected and not line.startswith((" ", "\t", ">", "- ", "* ", "+ "))
+        if top and _starts_metadata(stripped):
+            if on_back or any(prev.strip() for prev in chunks[-1][0]):
+                misplaced_meta.add(len(chunks) - 1)
+        if top and stripped == "<!-- card -->":
+            chunks.append(([], []))
+            on_back = False
             continue
-        if fence:
-            if re.fullmatch(re.escape(fence[0]) + "{" + str(len(fence)) + ",}\\s*", stripped):
-                fence = None
-            cards[-1].append(line)
+        if top and stripped == "<!-- back -->":
+            on_back = True
             continue
-        opening = re.match(r"^(`{3,}|~{3,})", stripped)
-        if opening:
-            fence = opening[1]
-            cards[-1].append(line)
-            at_card_start = False
-            continue
-        top = not line.startswith((" ", "\t", ">", "- ", "* ", "+ "))
-        if top and not container and stripped in {"<!-- card -->", "<!-- back -->"}:
-            close_paragraph()
-        if top and not container and stripped == "<!-- card -->":
-            cards.append([])
-            number += 1
-            at_card_start = True
-            continue
-        if top and not container and stripped == "<!-- back -->":
-            at_card_start = False
-            continue
-        if top and not container and re.match(r"^<!-- meta(?:\s|$)", line):
-            if not at_card_start:
-                raise InputError(f"card {number}: meta belongs once at the start of the front")
-            raw = line[len("<!-- meta"):]
-            if "-->" in raw:
-                obj = json.loads(raw.split("-->", 1)[0])
-                if not isinstance(obj, dict):
-                    raise InputError(f"card {number}: meta must be an object")
-                category_path(obj.get("category", []))
-                if "starred" in obj and not isinstance(obj["starred"], bool):
-                    raise InputError(f"card {number}: starred must be boolean")
-                at_card_start = False
-            else:
-                meta_lines = [raw]
-            continue
-        if top:
-            if stripped.startswith(":::choice"):
-                container.append(":::")
-            elif stripped.startswith("<details"):
-                container.append("</details>")
-            elif stripped == "$$":
-                if container and container[-1] == "$$":
-                    container.pop()
-                else:
-                    container.append("$$")
-            elif container and stripped == container[-1]:
-                container.pop()
-        # Display formulas are raw LaTeX, like code: no legacy or tag checks inside.
-        if stripped == "$$" or (container and container[-1] == "$$"):
-            cards[-1].append(line)
-            at_card_start = False
-            continue
-        visible = re.sub(r"(`+).*?\1", "", line)
-        visible = INLINE_MATH.sub("", visible)
-        # Note and ruby texts are plain attributes; legacy-looking text inside them is literal.
-        if LEGACY.search(ATTRIBUTE_TAG.sub("{{attr}}", visible)):
-            raise InputError(f"card {number}: use dialect v2 only; rewrite legacy/Anki syntax and escape literal brackets as \\[ \\]")
-        if stripped:
-            paragraph.append(visible)
+        if on_back:
+            chunks[-1][1].append(line)
         else:
-            close_paragraph()
-        references.extend((number, ref) for ref in re.findall(r"!\[[^\]]*\]\(att:([^\s)]+)\)", visible))
-        cards[-1].append(line)
-        if stripped:
-            at_card_start = False
-    close_paragraph()
-    if meta_lines is not None:
-        raise InputError(f"card {number}: meta needs a closing -->")
-    if fence or container:
-        raise InputError(f"card {number}: unclosed code/choice/details/formula block")
-    nonempty = sum(bool("\n".join(card).strip()) for card in cards)
+            chunks[-1][0].append(line)
+
+    references = []
+    nonempty = 0
+    for idx, (front_lines, back_lines) in enumerate(chunks):
+        number = idx + 1
+        if idx in misplaced_meta:
+            raise InputError(f"card {number}: meta belongs once at the start of the front")
+        front = "\n".join(front_lines).strip()
+        front = _take_metadata(front, number)
+        back = "\n".join(back_lines)
+        if front:
+            _validate_side(front.split("\n"), number, references, choice_policy="allow", allows_details=True)
+        if back.strip():
+            _validate_side(back.split("\n"), number, references, choice_policy="allow", allows_details=True)
+        if front or back.strip():
+            nonempty += 1
+
     if not nonempty:
         raise InputError("no nonempty cards")
     return {"cards": nonempty, "references": references, "header": header}

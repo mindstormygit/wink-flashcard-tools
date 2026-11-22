@@ -465,17 +465,18 @@ def write_wink(content_root, output_path):
     content = json.dumps(
         content_root, ensure_ascii=False, separators=(",", ":"), sort_keys=True
     ).encode("utf-8")
-    try:
-        with zipfile.ZipFile(
-            output_path,
-            mode="x",
-            compression=zipfile.ZIP_DEFLATED,
-            compresslevel=9,
-        ) as archive:
-            archive.writestr("content.json", content)
-    except Exception:
-        output_path.unlink(missing_ok=True)
-        raise
+    with output_path.open("xb") as stream:
+        try:
+            with zipfile.ZipFile(
+                stream,
+                mode="w",
+                compression=zipfile.ZIP_DEFLATED,
+                compresslevel=9,
+            ) as archive:
+                archive.writestr("content.json", content)
+        except BaseException:
+            output_path.unlink(missing_ok=True)
+            raise
 
 
 def parse_args(argv):

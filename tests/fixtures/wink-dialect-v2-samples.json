@@ -18,6 +18,7 @@
     {"name": "tags closed in the wrong order", "body": "{{color:#FF644E}}{{mute}}红色{{/color}}{{/mute}}"},
     {"name": "known tag with invalid value", "body": "{{color:red}}红色{{/color}}"},
     {"name": "choice block without closing line", "body": ":::choice\n哪条血管接收右心室的血液？\n- [ ] 主动脉\n- [x] 肺动脉"},
+    {"name": "choice block with invalid shuffle", "body": ":::choice{shuffle=maybe}\n题干\n- [x] 甲\n- [ ] 乙\n:::"},
     {"name": "display formula without closing line", "body": "$$\nx^2+y^2"},
     {"name": "empty note", "body": "{{note=}}术语{{/note}}"},
     {"name": "blank ruby reading", "body": "{{ruby= }}字{{/ruby}}"},
@@ -46,6 +47,7 @@
     {"name": "unknown tag stays literal", "body": "{{unknown}}文字"},
     {"name": "collapsed hint", "body": "问题\n\n<details>\n<summary>提示</summary>\n\n从心室的出口考虑。\n\n</details>"},
     {"name": "choice block", "body": ":::choice\n哪条血管接收右心室的血液？\n- [ ] 主动脉\n- [x] 肺动脉\n:::"},
+    {"name": "choice block with shuffle override", "body": ":::choice{shuffle=false}\n以下哪项正确？\n- [ ] 甲\n- [x] 以上都是\n:::"},
     {"name": "table with markers", "body": "{{header=both}}{{stripes}}\n| 项目 | 数值 |\n| --- | ---: |\n| {{bg=yellow}}完成率 | {{format=percent}}25 |"}
   ]
 }

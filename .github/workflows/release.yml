@@ -21,11 +21,11 @@ jobs:
           python3 skills/generate-twinkling-pack/scripts/validate_winkmd.py skills/generate-twinkling-pack/examples/example-pack.winkmd
           python3 skills/generate-twinkling-pack/scripts/validate_winkmd.py skills/generate-twinkling-pack/examples/example-card.winkmd
           python3 skills/generate-twinkling-pack/scripts/validate_winkmd.py skills/generate-twinkling-pack/examples/example-media.zip
-          python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \
-            skills/generate-twinkling-word-pack/examples/example-word-pack.wink
-          python3 skills/generate-twinkling-word-pack/scripts/validate_word_wink.py \
-            skills/generate-twinkling-word-pack/examples/example-word-card.wink
-      - name: Package Skills
+          python3 skills/generate-twinkling-pack/scripts/validate_word_wink.py \
+            skills/generate-twinkling-pack/examples/example-word-pack.wink
+          python3 skills/generate-twinkling-pack/scripts/validate_word_wink.py \
+            skills/generate-twinkling-pack/examples/example-word-card.wink
+      - name: Package Skill
         run: |
           python3 scripts/package_skills.py
           cd dist
@@ -36,7 +36,6 @@ jobs:
         run: |
           gh release create "${GITHUB_REF_NAME}" \
             dist/generate-twinkling-pack.zip \
-            dist/generate-twinkling-word-pack.zip \
             dist/SHA256SUMS.txt \
             --generate-notes \
             --title "WinkNotes Flashcard Tools ${GITHUB_REF_NAME}"

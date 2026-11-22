@@ -1,4 +1,4 @@
 interface:
   display_name: "Generate WinkNotes Cards"
-  short_description: "Write v2 winkmd cards with categories and media"
-  default_prompt: "Use $generate-twinkling-pack to turn this source into source-grounded .winkmd flashcards. Include useful recall and choice questions, hierarchical categories and optional stars. Put translations and notes inside mute tags and hints in collapsed details. Deliver a validated .winkmd file, or a ZIP with media when needed."
+  short_description: "Create v2 winkmd note/choice cards and native .wink word cards"
+  default_prompt: "Use $generate-twinkling-pack to turn this source into importable WinkNotes flashcards. Route note, cloze, and choice requests to dialect-v2 .winkmd (or a ZIP with media), and supported-language vocabulary requests to native WordDocument .wink (one .wink per supported language, plus .winkmd/ZIP when notes are also requested). Clarify ambiguous language-learning requests first, and validate every deliverable before returning it."

@@ -1,4 +1,4 @@
-<!-- Generated copy. Source: WinkNotes App repository, supportfiles/specs/wink-spec-markdown-format.md, app version 2.21.0, copied 2026-11-09. Do not edit here: edit the App copy, then rerun scripts/package_skills.py. -->
+<!-- Generated copy. Source: WinkNotes App repository, supportfiles/specs/wink-spec-markdown-format.md, app version 2.21.0, copied 2026-11-22. Do not edit here: edit the App copy, then rerun scripts/package_skills.py --app-repo <path>. -->
 
 # TwinklingCard Markdown Interchange Format (dialect v2)
 
@@ -253,16 +253,17 @@ Any content: paragraphs, lists, tables, headings, nested `<details>` …
 :::
 ```
 
-- Opens with `:::choice` (optional `{#id}`), closes with a line containing only `:::`.
-- Write at least one prompt block, then **end with at least one option**. Prompts can contain
+- Opens with `:::choice` (optional `{#id}`, optional `shuffle=true` or `shuffle=false`, e.g. `:::choice{shuffle=false}` or `:::choice{#q1 shuffle=true}`), closes with a line containing only `:::`. Omitting `shuffle` follows the pack setting.
+- Write at least one prompt block, then **at least one option**. Prompts can contain
   paragraphs, images (including rich images), display formulas, code blocks, bullet or ordered lists and audio bars. `- [x]` marks a correct option, `- [ ]` an incorrect one. Option ids `{#id}` are
   optional on input and generated when missing.
 - Each option is either one paragraph of text or exactly one image reference; mixing text and an
   image in one option is an error. Clozes and text annotations are disallowed in options. A text option may start with
   `{{indent=N}}` for an indent.
 - A choice block sits at the top level of a side, not inside a list. A card may hold any number
-  of choice blocks; a block with no correct option is allowed. The explanation goes on the back
-  side as ordinary content.
+  of choice blocks; a block with no correct option is allowed. To attach an explanation to this question, add a line containing only
+  `:::explanation` after the last option, followed by paragraphs, lists, images, formulas or code.
+  The final `:::` closes the whole question.
 
 ## Escaping
 
